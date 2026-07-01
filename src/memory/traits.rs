@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::result::Result;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use crate::block::traits::{Block, BlockId, BlockStorage, ContentAddressedStorage, EncryptedBlock, StorageStats};
 use crate::crypto::traits::{HashFunction, SymmetricEncryption, SignatureScheme};
 
@@ -193,7 +193,10 @@ pub trait MemoryManager: Send + Sync {
     fn unmap_file(&mut self, region_id: Self::RegionId) -> Result<(), Self::Error>;
 
     /// Create a memory-mapped view of a block storage
-    fn map_block_storage(&mut self, storage: Arc<dyn BlockStorage>) -> Result<Self::RegionId, Self::Error>;
+    fn map_block_storage<B, E>(&mut self, storage: Arc<dyn BlockStorage<Block = B, Error = E>>) -> Result<Self::RegionId, Self::Error>
+    where
+        B: Block + 'static,
+        E: std::error::Error + Send + Sync + 'static;
 
     /// Get the total allocated memory
     fn total_allocated(&self) -> Result<usize, Self::Error>;

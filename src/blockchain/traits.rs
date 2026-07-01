@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::result::Result;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use crate::block::traits::{Block, BlockId, BlockStorage};
 use crate::crypto::traits::{SignatureScheme, HashFunction};
 
@@ -62,13 +62,13 @@ pub trait Transaction: Clone + Debug + Serialize + DeserializeOwned + Eq + std::
     fn nonce(&self) -> u64;
 
     /// Serialize the transaction to bytes (excluding signature)
-    fn serialize(&self) -> Result<Vec<u8>>;
+    fn serialize(&self) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Deserialize a transaction from bytes
-    fn deserialize(data: &[u8]) -> Result<Self> where Self: Sized;
+    fn deserialize(data: &[u8]) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> where Self: Sized;
 
     /// Validate the transaction (signature, format, etc.)
-    fn validate(&self) -> Result<bool>;
+    fn validate(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Return the transaction type
     fn transaction_type(&self) -> TransactionType;
@@ -97,7 +97,7 @@ pub trait TransactionBuilder: Send + Sync {
     type Error: std::error::Error + Send + Sync;
 
     /// Create a new unsigned transaction
-    fn new_transaction(&mut self, payload: Vec<u8>) -> Result<Self::Transaction>;
+    fn new_transaction(&mut self, payload: Vec<u8>) -> Result<Self::Transaction, Self::Error>;
 
     /// Set the sender for the transaction
     fn with_sender(&mut self, sender: Vec<u8>) -> &mut Self;

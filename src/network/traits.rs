@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use std::net::{SocketAddr, IpAddr};
 use std::time::SystemTime;
 use std::result::Result;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 /// Trait for a peer identifier
 pub trait PeerId:
@@ -180,7 +180,7 @@ pub trait NetworkProtocol: Send + Sync {
     fn local_peer(&self) -> &Self::Peer;
 
     /// Get the message serializer
-    fn serializer(&self) -> &dyn MessageSerializer<Message = Self::Message>;
+    fn serializer(&self) -> &dyn MessageSerializer<Message = Self::Message, Error = Box<dyn std::error::Error + Send + Sync + 'static>>;
 
     /// Set a message handler for incoming messages
     fn set_message_handler(&mut self, handler: Arc<dyn Fn(Self::Peer, Self::Message) + Send + Sync>);

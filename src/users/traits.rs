@@ -9,7 +9,7 @@
 
 use std::fmt::Debug;
 use std::result::Result;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 /// Name of the genesis user - owner of all system executable blocks
 pub const GENESIS_USER_NAME: &str = "futuros";

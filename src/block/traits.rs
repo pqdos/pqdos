@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::fmt::Debug;
 use std::result::Result;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 /// Trait for a block identifier (content address)
 /// 
@@ -265,15 +265,12 @@ pub trait BlockQuery: Send + Sync {
 /// High-level interface for content-addressed block storage,
 /// combining storage, retrieval, and content-based addressing.
 pub trait ContentAddressedStorage: BlockStorage + BlockQuery + BlockVerifier {
-    /// The type of block
-    type Block: Block;
-
     /// Store data and return its content address
-    fn store_data(&mut self, data: Vec<u8>) -> Result<<Self::Block as Block>::Id, Self::Error>;
+    fn store_data(&mut self, data: Vec<u8>) -> Result<<<Self as BlockStorage>::Block as Block>::Id, <Self as BlockStorage>::Error>;
 
     /// Retrieve data by its content address
-    fn retrieve_data(&self, address: &[u8]) -> Result<Vec<u8>, Self::Error>;
+    fn retrieve_data(&self, address: &[u8]) -> Result<Vec<u8>, <Self as BlockStorage>::Error>;
 
     /// Check if data exists by its content address
-    fn exists_data(&self, address: &[u8]) -> Result<bool, Self::Error>;
+    fn exists_data(&self, address: &[u8]) -> Result<bool, <Self as BlockStorage>::Error>;
 }
