@@ -1,0 +1,213 @@
+
+# FuturOS : a Distributed Post-Quantum Secure Operating System for the Future
+
+A novel operating system architecture that unifies memory hierarchy through content-addressed, encrypted blocks with immutable history tracked on a distributed blockchain.
+
+## Vision
+
+This OS treats all storage as a unified memory layer where:
+- **Files = Encrypted Memory Blocks** identified by cryptographic signatures (similar to Git)
+- **Content Addressing** ensures deduplication and integrity
+- **Blockchain Ledger** maintains immutable version history and access control
+- **Post-Quantum Cryptography** protects against quantum adversaries
+- **Distributed Consensus** enables decentralized operation
+
+## Architecture Overview
+
+```
+┌──────────────────────────────────────────┐
+│      Application Layer                   │
+└──────────────────────────────────────────┘
+              ↓
+┌──────────────────────────────────────────┐
+│   Unified Memory Abstraction              │
+│   • Content-addressed blocks              │
+│   • Encryption at rest                    │
+│   • Version tracking                      │
+└──────────────────────────────────────────┘
+              ↓
+┌──────────────────────────────────────────┐
+│   Blockchain State Layer                  │
+│   • Transaction log                       │
+│   • Access control lists                  │
+│   • Distributed consensus                 │
+└──────────────────────────────────────────┘
+              ↓
+┌──────────────────────────────────────────┐
+│   Distributed Storage Backend             │
+│   • DHT-based peer network                │
+│   • IPFS-like content distribution        │
+└──────────────────────────────────────────┘
+```
+
+## Key Concepts
+
+### 1. Content-Addressed Blocks
+
+Every piece of data is stored as an immutable block identified by its content hash:
+
+```
+Block {
+  hash: Hash(content + metadata),
+  content: EncryptedData,
+  metadata: BlockMetadata,
+  timestamp: u64,
+  parent_hashes: Vec<Hash>,  // For DAG structure
+}
+```
+
+### 2. Blockchain History
+
+A distributed blockchain maintains:
+- Block creation/modification events
+- Access control changes
+- Cryptographic proofs of authenticity
+- Full audit trail
+
+### 3. Post-Quantum Cryptography
+
+- **ML-KEM** (Kyber): Key encapsulation for symmetric key exchange
+- **ML-DSA** (Dilithium): Digital signatures for block authentication
+- **Symmetric**: AES-256-GCM for block encryption
+
+### 4. Distributed Consensus
+
+- **Raft** or **Byzantine Fault Tolerant** consensus for coordinating state
+- Each node maintains the full blockchain
+- Quorum-based validation for writes
+
+## Cryptographic Components
+
+### Block Signature
+```
+Signature = ML-DSA.Sign(
+  private_key,
+  Hash(block_content || block_metadata || parent_hashes)
+)
+```
+
+### Block Encryption
+```
+EncryptedContent = AES-256-GCM.Encrypt(
+  key=ML-KEM.Decapsulate(ephemeral_ciphertext),
+  plaintext=block_content,
+  additional_data=block_metadata
+)
+```
+
+## Repository Structure
+
+```
+pqc-distro-os/
+├── Cargo.toml
+├── README.md
+├── src/
+│   ├── main.rs
+│   ├── lib.rs
+│   ├── block/          # Content-addressed blocks
+│   │   ├── mod.rs
+│   │   ├── storage.rs
+│   │   └── hash.rs
+│   ├── blockchain/     # Distributed ledger
+│   │   ├── mod.rs
+│   │   ├── chain.rs
+│   │   ├── consensus.rs
+│   │   └── transaction.rs
+│   ├── crypto/         # PQC cryptography
+│   │   ├── mod.rs
+│   │   ├── signatures.rs
+│   │   ├── encryption.rs
+│   │   └── keys.rs
+│   ├── network/        # P2P communication
+│   │   ├── mod.rs
+│   │   ├── peer.rs
+│   │   └── protocol.rs
+│   ├── memory/         # Unified memory abstraction
+│   │   ├── mod.rs
+│   │   ├── hierarchy.rs
+│   │   └── access.rs
+│   └── error.rs
+├── tests/
+│   ├── integration_test.rs
+│   └── crypto_test.rs
+└── docs/
+    ├── ARCHITECTURE.md
+    ├── CONSENSUS.md
+    └── SECURITY.md
+```
+
+## Development Roadmap
+
+### Phase 1: Core Infrastructure
+- [ ] Content-addressed block storage
+- [ ] Post-quantum cryptography wrappers
+- [ ] Basic blockchain transaction structure
+- [ ] Unit tests for crypto operations
+
+### Phase 2: Distributed Features
+- [ ] P2P networking layer
+- [ ] Raft consensus implementation
+- [ ] Block replication across nodes
+- [ ] Transaction broadcasting
+
+### Phase 3: Memory Abstraction
+- [ ] Unified memory interface
+- [ ] File-system DAG structure
+- [ ] Access control via blockchain
+- [ ] Version history queries
+
+### Phase 4: System Integration
+- [ ] VFS (Virtual File System) integration
+- [ ] Process isolation
+- [ ] Syscall interface
+- [ ] Performance optimization
+
+## Getting Started
+
+### Prerequisites
+- Rust 1.70+
+- liboqs-rs (for post-quantum crypto)
+- Standard development tools
+
+### Building
+```bash
+cargo build --release
+```
+
+### Running Tests
+```bash
+cargo test
+```
+
+## Dependencies
+
+- `sha3`: Cryptographic hashing
+- `liboqs-rs`: NIST post-quantum algorithms
+- `aes-gcm`: Authenticated encryption
+- `tokio`: Async runtime for networking
+- `serde`: Serialization framework
+- `thiserror`: Error handling
+
+## Security Considerations
+
+1. **Quantum Resistance**: All signatures and key exchanges use NIST-approved PQC algorithms
+2. **Forward Secrecy**: Regular key rotation with ephemeral session keys
+3. **Immutability**: Blockchain ensures tamper-evident history
+4. **Decentralization**: No single point of failure
+5. **Audit Trail**: Complete record of all modifications
+
+## Contributing
+
+We welcome contributions! Please see CONTRIBUTING.md for guidelines.
+
+## License
+
+This project is licensed under the MIT License - see LICENSE file for details.
+
+## References
+
+- [NIST Post-Quantum Cryptography Project](https://csrc.nist.gov/projects/post-quantum-cryptography/)
+- [CRYSTALS-Kyber](https://pq-crystals.org/kyber/index.shtml)
+- [CRYSTALS-Dilithium](https://pq-crystals.org/dilithium/index.shtml)
+- [Git's Content Addressing Model](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)
+- [Raft Consensus](https://raft.github.io/)
