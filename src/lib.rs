@@ -10,6 +10,7 @@ pub mod crypto;
 pub mod error;
 pub mod memory;
 pub mod network;
+pub mod users;
 
 pub use error::{Error, Result};
 

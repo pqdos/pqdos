@@ -11,6 +11,7 @@ license = "MIT"
 [dependencies]
 # Cryptography
 sha3 = "0.10"
+sha2 = "0.10"
 aes-gcm = "0.10"
 rand = "0.8"
 zeroize = "1.6"
