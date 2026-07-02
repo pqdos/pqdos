@@ -1,4 +1,4 @@
-# PQOS Architecture Documentation
+# pqdos Architecture Documentation
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -14,7 +14,7 @@
 
 ## Overview
 
-The Post-Quantum Distributed Operating System (PQOS) is built on a foundation of **abstract traits** that define interfaces without committing to specific implementations. This architecture ensures the system remains **evolvable, technology-agnostic, and secure**.
+The Post-Quantum Distributed Operating System (pqdos) is built on a foundation of **abstract traits** that define interfaces without committing to specific implementations. This architecture ensures the system remains **evolvable, technology-agnostic, and secure**.
 
 ### Key Innovations
 
@@ -550,7 +550,7 @@ pub use blockchain_users::*;
 
 ### Design Philosophy
 
-The **trait-based architecture** is the foundation of PQOS's evolvability:
+The **trait-based architecture** is the foundation of pqdos's evolvability:
 
 1. **Separation of Concerns**: Traits define WHAT, implementations define HOW
 2. **Zero Cost Abstractions**: Rust's monomorphization ensures no runtime overhead
@@ -829,7 +829,7 @@ pub struct User {
 ```
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │   External System    │────▶│  Signature Verifier  │────▶│   User Authenticator │
-│   (HSM, Secure       │     │   (External/Internal)│     │   (PQOS Module)    │
+│   (HSM, Secure       │     │   (External/Internal)│     │   (pqdos Module)    │
 │    Enclave, etc.)    │     │                     │     │                     │
 └─────────────────────┘     └─────────────────────┘     └─────────────────────┘
        │                        │                          │
@@ -841,10 +841,10 @@ pub struct User {
   └─────────────────┘    └─────────────────┘        └─────────────────┘
 ```
 
-1. **External signing**: Private key operations happen outside PQOS
+1. **External signing**: Private key operations happen outside pqdos
 2. **Signature verification**: Can be done externally or internally with public key
-3. **Token generation**: PQOS generates time-limited authentication tokens
-4. **Token validation**: PQOS validates tokens using its stored public keys
+3. **Token generation**: pqdos generates time-limited authentication tokens
+4. **Token validation**: pqdos validates tokens using its stored public keys
 
 #### Permission System
 
@@ -1094,10 +1094,10 @@ fn test_block_ownership_security() {
 
 ## Summary
 
-The PQOS **Users Module** provides:
+The pqdos **Users Module** provides:
 
 ✅ **Complete abstraction** through traits for all user management functionality  
-✅ **Genesis user "futuros"** with secure private key handling  
+✅ **Genesis user "pqdos"** with secure private key handling  
 ✅ **Reference implementation** in `simple.rs` for development and testing  
 ✅ **Extensible architecture** allowing custom backends (blockchain, database, etc.)  
 ✅ **Comprehensive security** with private key protection and permission system  
@@ -1109,7 +1109,7 @@ The **trait-based design** ensures:
 - **Type safety** - Compile-time guarantees through Rust's type system
 - **Performance** - Zero-cost abstractions through monomorphization
 
-This architecture enables PQOS to be:
+This architecture enables pqdos to be:
 - **Secure** against quantum and classical attacks
 - **Distributed** across multiple nodes
 - **Evolvable** as new technologies emerge

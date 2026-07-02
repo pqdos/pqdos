@@ -1,11 +1,11 @@
 
 [package]
-name = "pqc-distro-os"
+name = "pqdos"
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["pqdos@goulu.net"]
 description = "A distributed, post-quantum secure operating system with unified memory hierarchy"
-repository = "https://github.com/yourusername/pqc-distro-os"
+repository = "https://github.com/pqdos/pqdos"
 license = "MIT"
 
 [dependencies]

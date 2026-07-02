@@ -1,0 +1,213 @@
+name: Multi-Platform Release Build
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build for Linux (x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            cmake \
+            ninja-build \
+            libclang-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Create artifact
+        run: |
+          mkdir -p artifacts/linux
+          cp target/x86_64-unknown-linux-gnu/release/pqdos artifacts/linux/
+          tar -czvf artifacts/pqdos-linux-x86_64.tar.gz -C artifacts/linux pqdos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqdos-linux-x86_64
+          path: artifacts/pqdos-linux-x86_64.tar.gz
+
+  build-windows:
+    name: Build for Windows (x86_64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          choco install cmake ninja llvm -y
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: Create artifact
+        run: |
+          mkdir -p artifacts/windows
+          cp target/x86_64-pc-windows-gnu/release/pqdos.exe artifacts/windows/
+          Compress-Archive -Path artifacts/windows/* -DestinationPath artifacts/pqdos-windows-x86_64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqdos-windows-x86_64
+          path: artifacts/pqdos-windows-x86_64.zip
+
+  build-macos:
+    name: Build for macOS (x86_64 & aarch64)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          brew install cmake ninja llvm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release (x86_64)
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Build release (aarch64)
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Create artifacts
+        run: |
+          mkdir -p artifacts/macos
+          # x86_64
+          lipo -create \
+            target/x86_64-apple-darwin/release/pqdos \
+            target/aarch64-apple-darwin/release/pqdos \
+            -output artifacts/macos/pqdos
+          tar -czvf artifacts/pqdos-macos-universal.tar.gz -C artifacts/macos pqdos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqdos-macos-universal
+          path: artifacts/pqdos-macos-universal.tar.gz
+
+  build-android:
+    name: Build for Android (aarch64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Android NDK
+        uses: ntt-oss/setup-ndk@v1
+        with:
+          ndk-version: r26b
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            cmake \
+            ninja-build \
+            libclang-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Configure Android toolchain
+        run: |
+          echo "ANDROID_NDK_HOME=${{ env.ANDROID_NDK_HOME }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=${{ env.ANDROID_NDK_HOME }}" >> $GITHUB_ENV
+          echo "NDK_HOME=${{ env.ANDROID_NDK_HOME }}" >> $GITHUB_ENV
+
+      - name: Build release for Android
+        run: |
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+          export CC_aarch64_linux_android=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+          export CXX_aarch64_linux_android=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+          cargo build --release --target aarch64-linux-android
+
+      - name: Create artifact
+        run: |
+          mkdir -p artifacts/android
+          cp target/aarch64-linux-android/release/pqdos artifacts/android/
+          tar -czvf artifacts/pqdos-android-aarch64.tar.gz -C artifacts/android pqdos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqdos-android-aarch64
+          path: artifacts/pqdos-android-aarch64.tar.gz
+
+  # Job to create a combined release (optional)
+  create-release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows, build-macos, build-android]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          files: |
+            artifacts/pqdos-linux-x86_64/pqdos-linux-x86_64.tar.gz
+            artifacts/pqdos-windows-x86_64/pqdos-windows-x86_64.zip
+            artifacts/pqdos-macos-universal/pqdos-macos-universal.tar.gz
+            artifacts/pqdos-android-aarch64/pqdos-android-aarch64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

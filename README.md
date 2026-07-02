@@ -1,10 +1,10 @@
-# Post-Quantum Distributed OS (PQOS)
+# Post-Quantum Distributed OS (pqdos)
 
 A novel operating system architecture that unifies memory hierarchy through content-addressed, encrypted blocks with immutable history tracked on a distributed blockchain.
 
 ## Quick Overview
 
-PQOS treats all storage as a **unified memory layer** where:
+pqdos treats all storage as a **unified memory layer** where:
 - **Files = Encrypted Memory Blocks** identified by cryptographic signatures (similar to Git)
 - **Content Addressing** ensures deduplication and integrity
 - **Blockchain Ledger** maintains immutable version history and access control

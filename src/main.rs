@@ -1,4 +1,4 @@
-//! PQOS Shell - Command Line Interface for the Post-Quantum Distributed OS
+//! pqdos Shell - Command Line Interface for the Post-Quantum Distributed OS
 //!
 //! This application serves as the shell/CLI for the OS, providing:
 //! 1. Self-integrity verification against blockchain
@@ -15,13 +15,13 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use pqc_distro_os::users::{UserSystem, create_user_system_with_demo_keys, User, UserId, UserRole, UserPermissions};
+use pqdos::users::{UserSystem, create_user_system_with_demo_keys, User, UserId, UserRole, UserPermissions};
 use sha2::{Sha256, Digest};
 use parking_lot::RwLock;
 use chrono::Local;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const GENESIS_USER_NAME: &str = "futuros";
+const GENESIS_USER_NAME: &str = "pqdos";
 
 struct ShellState {
     cwd: PathBuf,
@@ -224,7 +224,7 @@ fn create_account(state: &mut ShellState) -> Result<(), String> {
 }
 
 fn handle_authentication(state: &mut ShellState) -> Result<(), String> {
-    println!("\n=== PQOS Login ===");
+    println!("\n=== pqdos Login ===");
     println!("1. Login");
     println!("2. Create account");
     println!("3. Back to shell");
@@ -320,7 +320,7 @@ fn process_command(state: &mut ShellState, vfs: &mut Option<VirtualFileSystem>, 
             } else { println!("❌ No virtual filesystem active"); }
             Ok(true)
         }
-        "version" | "--version" | "-v" => { println!("PQOS Shell v{}", VERSION); println!("Post-Quantum Distributed Operating System"); Ok(true) }
+        "version" | "--version" | "-v" => { println!("pqdos Shell v{}", VERSION); println!("Post-Quantum Distributed Operating System"); Ok(true) }
         "clear" | "cls" => { print!("\x1B[2J\x1B[1;1H"); Ok(true) }
         "exit" | "quit" | "q" => { Ok(false) }
         _ => { println!("Unknown command: '{}'. Type 'help' for available commands.", cmd); Ok(true) }
@@ -443,7 +443,7 @@ fn copy_to_virtual_directory(state: &ShellState, vfs: &mut Option<VirtualFileSys
 }
 
 fn print_help(is_authenticated: bool) {
-    println!("\n=== PQOS Shell Commands ===");
+    println!("\n=== pqdos Shell Commands ===");
     println!();
     println!("📁 File System:");
     println!("  pwd              Show current directory");
@@ -478,7 +478,7 @@ fn print_help(is_authenticated: bool) {
 
 fn print_banner() {
     println!("╔══════════════════════════════════════════════════════════════════════╗");
-    println!("║  Post-Quantum Distributed Operating System (PQOS) Shell           ║");
+    println!("║  Post-Quantum Distributed Operating System (pqdos) Shell           ║");
     println!("║                        v{} - CLI Interface                         ║", VERSION);
     println!("╚══════════════════════════════════════════════════════════════════════╝");
 }
@@ -503,7 +503,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     
-    println!("\n🚀 PQOS Shell ready. Type 'help' for available commands.\n");
+    println!("\n🚀 pqdos Shell ready. Type 'help' for available commands.\n");
     
     let mut state = ShellState::new();
     *state.user_system.write() = user_system;

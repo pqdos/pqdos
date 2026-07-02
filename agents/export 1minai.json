@@ -88,7 +88,7 @@
     }
   },
   "project_structure": {
-    "directory_layout": "pqc-distro-os/",
+    "directory_layout": "pqdos/",
     "modules": [
       "block/ - Content-addressed block storage",
       "blockchain/ - Distributed ledger",

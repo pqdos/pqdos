@@ -1,4 +1,4 @@
-# PQOS Shell CLI - User Manual
+# pqdos Shell CLI - User Manual
 
 ## Table of Contents
 
@@ -18,12 +18,12 @@
 
 ## Overview
 
-The **PQOS Shell** is the command-line interface for the Post-Quantum Distributed Operating System. It provides a unified environment where:
+The **pqdos Shell** is the command-line interface for the Post-Quantum Distributed Operating System. It provides a unified environment where:
 
 - **Files are treated as content-addressed encrypted memory blocks** (similar to Git)
 - **All operations are cryptographically verified** using post-quantum algorithms
 - **User authentication is mandatory** for accessing personal memory blocks
-- **The genesis user "futuros"** owns all system executable blocks
+- **The genesis user "pqdos"** owns all system executable blocks
 - **Blockchain-backed history** ensures immutable version tracking
 
 ---
@@ -66,22 +66,22 @@ cargo run --release
 
 ### First Launch
 
-When you first launch PQOS Shell, it will:
+When you first launch pqdos Shell, it will:
 
-1. **Verify self-integrity** - Check that the current binary matches the latest version registered in the blockchain by user "futuros"
+1. **Verify self-integrity** - Check that the current binary matches the latest version registered in the blockchain by user "pqdos"
 2. **Prompt for authentication** - You must login or create an account to proceed
 3. **Display the shell prompt** - Once authenticated, you'll see the interactive prompt
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║  Post-Quantum Distributed Operating System (PQOS) Shell           ║
+║  Post-Quantum Distributed Operating System (pqdos) Shell           ║
 ║                        vX.X.X - CLI Interface                         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 🔍 Verifying self-integrity...
 ✅ Self-integrity verified - Binary matches system blockchain
 
-🚀 PQOS Shell ready. Type 'help' for available commands.
+🚀 pqdos Shell ready. Type 'help' for available commands.
 
 pqos:$ 
 ```
@@ -103,7 +103,7 @@ Format: `pqos@{user}:{current_directory} $`
 | Command | Aliases | Description |
 |---------|---------|-------------|
 | `help` | `?` | Display this help message |
-| `version` | `-v`, `--version` | Display PQOS version |
+| `version` | `-v`, `--version` | Display pqdos version |
 | `clear` | `cls` | Clear the screen |
 | `exit` | `quit`, `q` | Exit the shell |
 
@@ -173,9 +173,9 @@ The **futuros** user is a special system user:
 
 - **Owns all system executable blocks** (kernel, shell, bootstrap)
 - **Cannot be logged into normally** - Only accessible with the private key (which is NEVER stored in the system)
-- **Used for system integrity verification** - The shell checks that the running binary matches a block owned by futuros
+- **Used for system integrity verification** - The shell checks that the running binary matches a block owned by pqdos
 
-⚠️ **SECURITY NOTE**: The private key for "futuros" is **NEVER stored or accessible** through PQOS. It must be kept in a secure external location (Hardware Security Module, secure enclave, etc.).
+⚠️ **SECURITY NOTE**: The private key for "pqdos" is **NEVER stored or accessible** through pqdos. It must be kept in a secure external location (Hardware Security Module, secure enclave, etc.).
 
 ### Authentication Flow
 
@@ -279,7 +279,7 @@ rm a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890
 
 ### Understanding Memory Blocks
 
-In PQOS, **everything is a memory block**:
+In pqdos, **everything is a memory block**:
 
 - **Content-Addressed**: Each block is identified by a cryptographic hash of its content (like Git)
 - **Encrypted**: All blocks are encrypted at rest
@@ -367,10 +367,10 @@ image.png
 
 ### Self-Integrity Verification
 
-On startup, PQOS Shell automatically verifies that:
+On startup, pqdos Shell automatically verifies that:
 
 1. The current binary's hash matches a block in the system blockchain
-2. That block is owned by the genesis user "futuros"
+2. That block is owned by the genesis user "pqdos"
 3. That block is marked as a system executable
 
 This ensures that **only authorized system code can run**.
@@ -397,16 +397,16 @@ System executable blocks are owned by **futuros** and include:
 - **drivers** - Hardware drivers
 - **services** - System services
 
-These blocks **cannot be modified** without the futuros private key.
+These blocks **cannot be modified** without the pqdos private key.
 
 ### Version Information
 
 ```bash
-# Check PQOS version
+# Check pqdos version
 version
 
 # Output:
-PQOS Shell v1.0.0
+pqdos Shell v1.0.0
 Post-Quantum Distributed Operating System
 ```
 
@@ -508,13 +508,13 @@ ls
 ### ⚠️ CRITICAL SECURITY PRINCIPLES
 
 1. **Private Keys Are NEVER Stored**
-   - PQOS **never** stores private keys
+   - pqdos **never** stores private keys
    - Only **public keys** are accessible through the system
    - Private keys must be kept in **external secure storage** (HSM, secure enclave, offline storage)
 
-2. **Genesis User "futuros"**
+2. **Genesis User "pqdos"**
    - Owns all system executable blocks
-   - Private key is **completely inaccessible** through PQOS
+   - Private key is **completely inaccessible** through pqdos
    - Used only for **system integrity verification**
 
 3. **Authentication**
@@ -535,7 +535,7 @@ ls
 
 ### Encryption
 
-All data in PQOS is:
+All data in pqdos is:
 
 - **Encrypted at rest** using symmetric encryption (AES-256-GCM by default)
 - **Content-addressed** using cryptographic hashing (SHA-256 by default)
@@ -619,7 +619,7 @@ cp file.txt /users/otheruser/blocks/
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════╗
-║                         PQOS SHELL COMMANDS                              ║
+║                         pqdos SHELL COMMANDS                              ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║                                                                       ║
 ║  📋 SYSTEM                                                           ║
@@ -656,7 +656,7 @@ cp file.txt /users/otheruser/blocks/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  PQOS SHELL - QUICK REFERENCE                                          │
+│  pqdos SHELL - QUICK REFERENCE                                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  NAVIGATION:                                                           │
@@ -712,10 +712,10 @@ For issues, questions, or contributions:
 - Check the [Architecture Documentation](./ARCHITECTURE.md) for technical details
 - Review this manual for usage questions
 - For bugs, please report with:
-  - PQOS version (`version` command)
+  - pqdos version (`version` command)
   - Steps to reproduce
   - Expected vs actual behavior
 
 ---
 
-*Last updated: 2024 | PQOS v1.0.0 | Post-Quantum Distributed OS*
+*Last updated: 2024 | pqdos v1.0.0 | Post-Quantum Distributed OS*

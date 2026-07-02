@@ -826,7 +826,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pqc-distro-os"
+name = "pqdos"
 version = "0.1.0"
 dependencies = [
  "aes-gcm",

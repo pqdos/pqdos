@@ -1,7 +1,7 @@
-//! Simple user system implementation for PQOS
+//! Simple user system implementation for pqdos
 //!
 //! This module provides a simplified but functional implementation of the user system
-//! with a genesis user "futuros" that owns all system executable blocks.
+//! with a genesis user "pqdos" that owns all system executable blocks.
 //!
 //! The key design principle: The genesis user's private key is NEVER stored or accessible
 //! through this system. Only the public key is stored.
