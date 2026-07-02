@@ -69,36 +69,20 @@ pub struct MemoryBlock {
 impl MemoryBlock {
     pub fn new(data: Vec<u8>, owner: String, block_type: String) -> Self {
         let id = compute_hash(&data);
-        let created_at = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
+        let created_at =
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
         let mut metadata = HashMap::new();
         metadata.insert("original_name".to_string(), "unknown".to_string());
-        metadata.insert(
-            "mime_type".to_string(),
-            "application/octet-stream".to_string(),
-        );
+        metadata.insert("mime_type".to_string(), "application/octet-stream".to_string());
         metadata.insert("size".to_string(), data.len().to_string());
         let signature = compute_hash(&data);
-        Self {
-            id,
-            data,
-            owner,
-            signature,
-            block_type,
-            created_at,
-            metadata,
-        }
+        Self { id, data, owner, signature, block_type, created_at, metadata }
     }
     pub fn id_hex(&self) -> String {
         hex_encode(&self.id)
     }
     pub fn original_name(&self) -> String {
-        self.metadata
-            .get("original_name")
-            .cloned()
-            .unwrap_or_else(|| "unknown".to_string())
+        self.metadata.get("original_name").cloned().unwrap_or_else(|| "unknown".to_string())
     }
     pub fn size(&self) -> usize {
         self.data.len()
@@ -112,10 +96,7 @@ pub struct VirtualFileSystem {
 
 impl VirtualFileSystem {
     pub fn new(user_name: String) -> Self {
-        Self {
-            user_name,
-            blocks: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { user_name, blocks: Arc::new(RwLock::new(HashMap::new())) }
     }
     pub fn add_block(&self, block: MemoryBlock) -> String {
         let block_id = block.id_hex();
@@ -141,41 +122,32 @@ impl VirtualFileSystem {
         }
         let data = fs::read(file_path).map_err(|e| format!("Failed to read file: {}", e))?;
         let original_name = block_name.unwrap_or_else(|| {
-            file_path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("unknown")
-                .to_string()
+            file_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string()
         });
         let mut block = MemoryBlock::new(data, self.user_name.clone(), "file".to_string());
-        block
-            .metadata
-            .insert("original_name".to_string(), original_name.clone());
+        block.metadata.insert("original_name".to_string(), original_name.clone());
         if let Some(ext) = file_path.extension() {
             if let Some(ext_str) = ext.to_str() {
                 let mime = match ext_str.to_lowercase().as_str() {
-                    "txt" => "text/plain",
-                    "md" => "text/markdown",
-                    "rs" => "text/x-rustsrc",
-                    "py" => "text/x-python",
-                    "js" => "application/javascript",
-                    "json" => "application/json",
-                    "html" => "text/html",
-                    "css" => "text/css",
-                    "png" => "image/png",
-                    "jpg" | "jpeg" => "image/jpeg",
-                    "gif" => "image/gif",
-                    _ => "application/octet-stream",
+                    | "txt" => "text/plain",
+                    | "md" => "text/markdown",
+                    | "rs" => "text/x-rustsrc",
+                    | "py" => "text/x-python",
+                    | "js" => "application/javascript",
+                    | "json" => "application/json",
+                    | "html" => "text/html",
+                    | "css" => "text/css",
+                    | "png" => "image/png",
+                    | "jpg" | "jpeg" => "image/jpeg",
+                    | "gif" => "image/gif",
+                    | _ => "application/octet-stream",
                 };
-                block
-                    .metadata
-                    .insert("mime_type".to_string(), mime.to_string());
+                block.metadata.insert("mime_type".to_string(), mime.to_string());
             }
         }
-        block.metadata.insert(
-            "original_path".to_string(),
-            file_path.to_string_lossy().into_owned(),
-        );
+        block
+            .metadata
+            .insert("original_path".to_string(), file_path.to_string_lossy().into_owned());
         Ok(block)
     }
     pub fn get_block_by_name(&self, name: &str) -> Option<MemoryBlock> {
@@ -244,9 +216,7 @@ fn login_user(state: &mut ShellState) -> Result<(), String> {
     print!("\nUsername: ");
     io::stdout().flush().unwrap();
     let mut username = String::new();
-    io::stdin()
-        .read_line(&mut username)
-        .map_err(|e| e.to_string())?;
+    io::stdin().read_line(&mut username).map_err(|e| e.to_string())?;
     let username = username.trim().to_string();
     if username.is_empty() {
         println!("❌ Username cannot be empty");
@@ -262,10 +232,7 @@ fn login_user(state: &mut ShellState) -> Result<(), String> {
     };
     if let Some(genesis) = genesis_user {
         state.set_user(genesis);
-        println!(
-            "✅ Login successful as genesis user '{}'!",
-            GENESIS_USER_NAME
-        );
+        println!("✅ Login successful as genesis user '{}'!", GENESIS_USER_NAME);
         println!("   You own all system executable blocks");
         return Ok(());
     }
@@ -279,12 +246,7 @@ fn login_user(state: &mut ShellState) -> Result<(), String> {
         can_manage_system: false,
         can_execute_code: false,
     };
-    let user = User::new(
-        username.clone(),
-        demo_public_key,
-        UserRole::User,
-        permissions,
-    );
+    let user = User::new(username.clone(), demo_public_key, UserRole::User, permissions);
     state.set_user(user);
     Ok(())
 }
@@ -293,9 +255,7 @@ fn create_account(state: &mut ShellState) -> Result<(), String> {
     print!("\nUsername: ");
     io::stdout().flush().unwrap();
     let mut username = String::new();
-    io::stdin()
-        .read_line(&mut username)
-        .map_err(|e| e.to_string())?;
+    io::stdin().read_line(&mut username).map_err(|e| e.to_string())?;
     let username = username.trim().to_string();
     if username.is_empty() {
         println!("❌ Username cannot be empty");
@@ -318,17 +278,15 @@ fn handle_authentication(state: &mut ShellState) -> Result<(), String> {
     print!("\nChoice: ");
     io::stdout().flush().unwrap();
     let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .map_err(|e| e.to_string())?;
+    io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
     match input.trim() {
-        "1" => login_user(state),
-        "2" => create_account(state),
-        "3" => Ok(()),
-        _ => {
+        | "1" => login_user(state),
+        | "2" => create_account(state),
+        | "3" => Ok(()),
+        | _ => {
             println!("❌ Invalid choice");
             Ok(())
-        }
+        },
     }
 }
 
@@ -344,31 +302,31 @@ fn process_command(
     let cmd = parts[0].to_lowercase();
     let args: Vec<&str> = parts[1..].to_vec();
     match cmd.as_str() {
-        "login" | "auth" => {
+        | "login" | "auth" => {
             state.clear_user();
             *vfs = None;
             handle_authentication(state)?;
             Ok(true)
-        }
-        "logout" => {
+        },
+        | "logout" => {
             println!("Logging out...");
             state.clear_user();
             *vfs = None;
             Ok(true)
-        }
-        "help" | "?" => {
+        },
+        | "help" | "?" => {
             print_help(state.is_authenticated);
             Ok(true)
-        }
-        "pwd" => {
+        },
+        | "pwd" => {
             println!("{}", state.cwd.display());
             Ok(true)
-        }
-        "cd" => {
+        },
+        | "cd" => {
             if args.is_empty() {
                 state.cwd = match env::var("HOME") {
-                    Ok(home) => PathBuf::from(home),
-                    Err(_) => PathBuf::from("/"),
+                    | Ok(home) => PathBuf::from(home),
+                    | Err(_) => PathBuf::from("/"),
                 };
             } else {
                 let target = args[0];
@@ -399,16 +357,16 @@ fn process_command(
                 }
             }
             Ok(true)
-        }
-        "ls" | "dir" => {
+        },
+        | "ls" | "dir" => {
             list_current_directory(state, vfs)?;
             Ok(true)
-        }
-        "ll" | "ls -l" | "ls -la" => {
+        },
+        | "ll" | "ls -l" | "ls -la" => {
             list_current_directory(state, vfs)?;
             Ok(true)
-        }
-        "cp" | "copy" => {
+        },
+        | "cp" | "copy" => {
             if args.len() < 2 {
                 println!("Usage: cp <source> <destination>");
                 return Ok(true);
@@ -428,13 +386,13 @@ fn process_command(
                     state.cwd.join(dest_arg)
                 };
                 match fs::copy(&source_path, &dest_path) {
-                    Ok(_) => println!("✅ Copied '{}' to '{}'", args[0], dest_arg),
-                    Err(e) => println!("❌ Copy failed: {}", e),
+                    | Ok(_) => println!("✅ Copied '{}' to '{}'", args[0], dest_arg),
+                    | Err(e) => println!("❌ Copy failed: {}", e),
                 }
             }
             Ok(true)
-        }
-        "rm" | "remove" | "del" => {
+        },
+        | "rm" | "remove" | "del" => {
             if args.is_empty() {
                 println!("Usage: rm <file|block_id>");
                 return Ok(true);
@@ -460,8 +418,8 @@ fn process_command(
                 }
             }
             Ok(true)
-        }
-        "blocks" | "myblocks" => {
+        },
+        | "blocks" | "myblocks" => {
             if !state.is_authenticated {
                 println!("❌ Please login first");
                 return Ok(true);
@@ -470,8 +428,8 @@ fn process_command(
                 list_user_blocks(fs)?;
             }
             Ok(true)
-        }
-        "blockinfo" | "binfo" => {
+        },
+        | "blockinfo" | "binfo" => {
             if args.is_empty() {
                 println!("Usage: blockinfo <block_id>");
                 return Ok(true);
@@ -479,35 +437,32 @@ fn process_command(
             let block_id = args[0];
             if let Some(ref fs) = vfs {
                 match fs.get_block(block_id) {
-                    Some(block) => {
+                    | Some(block) => {
                         print_block_info(&block)?;
-                    }
-                    None => {
+                    },
+                    | None => {
                         println!("❌ Block not found: {}", block_id);
-                    }
+                    },
                 }
             } else {
                 println!("❌ No virtual filesystem active");
             }
             Ok(true)
-        }
-        "version" | "--version" | "-v" => {
+        },
+        | "version" | "--version" | "-v" => {
             println!("pqdos Shell v{}", VERSION);
             println!("Post-Quantum Distributed Operating System");
             Ok(true)
-        }
-        "clear" | "cls" => {
+        },
+        | "clear" | "cls" => {
             print!("\x1B[2J\x1B[1;1H");
             Ok(true)
-        }
-        "exit" | "quit" | "q" => Ok(false),
-        _ => {
-            println!(
-                "Unknown command: '{}'. Type 'help' for available commands.",
-                cmd
-            );
+        },
+        | "exit" | "quit" | "q" => Ok(false),
+        | _ => {
+            println!("Unknown command: '{}'. Type 'help' for available commands.", cmd);
             Ok(true)
-        }
+        },
     }
 }
 
@@ -529,10 +484,7 @@ fn list_directory(
     _vfs: Option<&VirtualFileSystem>,
 ) -> Result<(), String> {
     if !path.exists() {
-        println!(
-            "ls: cannot access '{}': No such file or directory",
-            path.display()
-        );
+        println!("ls: cannot access '{}': No such file or directory", path.display());
         return Ok(());
     }
     if !path.is_dir() {
@@ -558,11 +510,7 @@ fn list_directory(
             let entry_path = entry.path();
             let metadata = entry.metadata().map_err(|e| e.to_string())?;
             let file_type = if metadata.is_dir() { "d" } else { "-" };
-            let permissions = if metadata.is_dir() {
-                "rwxr-xr-x"
-            } else {
-                "rw-r--r--"
-            };
+            let permissions = if metadata.is_dir() { "rwxr-xr-x" } else { "rw-r--r--" };
             let size = if metadata.is_dir() { 0 } else { metadata.len() };
             let modified: chrono::DateTime<chrono::Local> = metadata.modified().unwrap().into();
             println!(
@@ -591,10 +539,7 @@ fn list_virtual_directory(vfs: &VirtualFileSystem) -> Result<(), String> {
         return Ok(());
     }
     println!("\nMemory Blocks:");
-    println!(
-        "{:<6} {:<40} {:<16} {:<12} {}",
-        "#", "Block ID", "Type", "Size", "Name"
-    );
+    println!("{:<6} {:<40} {:<16} {:<12} {}", "#", "Block ID", "Type", "Size", "Name");
     println!("{}", "-".repeat(80));
     for (i, block) in blocks.iter().enumerate() {
         let size = block.size();
@@ -662,11 +607,7 @@ fn print_block_info(block: &MemoryBlock) -> Result<(), String> {
     println!("  Type: {}", block.block_type);
     println!("  Owner: {}", block.owner);
     println!("  Original Name: {}", block.original_name());
-    println!(
-        "  Size: {} bytes ({} KB)",
-        block.size(),
-        block.size() / 1024
-    );
+    println!("  Size: {} bytes ({} KB)", block.size(), block.size() / 1024);
     if let Some(mime) = block.metadata.get("mime_type") {
         println!("  MIME Type: {}", mime);
     }
@@ -677,10 +618,7 @@ fn print_block_info(block: &MemoryBlock) -> Result<(), String> {
         .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
         .unwrap_or_else(|| "Unknown".to_string());
     println!("  Created: {}", created);
-    println!(
-        "  Signature: {}...",
-        hex_encode(&block.signature)[..16].to_string()
-    );
+    println!("  Signature: {}...", hex_encode(&block.signature)[..16].to_string());
     Ok(())
 }
 
@@ -694,19 +632,13 @@ fn copy_to_virtual_directory(
         println!("❌ Source file not found: {}", source_path.display());
         return Ok(());
     }
-    let username = state
-        .current_user
-        .as_ref()
-        .map(|u| u.name.clone())
-        .ok_or("No user authenticated")?;
+    let username =
+        state.current_user.as_ref().map(|u| u.name.clone()).ok_or("No user authenticated")?;
     let expected_prefix = format!("/users/{}/blocks", username);
     if !dest_arg.starts_with(&expected_prefix)
         && !dest_arg.contains(&format!("/users/{}/blocks/", username))
     {
-        println!(
-            "❌ Destination must be in your blocks directory: {}/blocks/",
-            expected_prefix
-        );
+        println!("❌ Destination must be in your blocks directory: {}/blocks/", expected_prefix);
         return Ok(());
     }
     if vfs.is_none() {
@@ -716,7 +648,7 @@ fn copy_to_virtual_directory(
         let components: Vec<&str> = dest_arg.split('/').collect();
         let block_name = components.last().copied().unwrap_or("unknown");
         match fs.file_to_block(source_path, Some(block_name.to_string())) {
-            Ok(block) => {
+            | Ok(block) => {
                 let block_id = fs.add_block(block);
                 println!("✅ File converted to memory block");
                 println!("   Block ID: {}", block_id);
@@ -724,10 +656,10 @@ fn copy_to_virtual_directory(
                 println!("   Original Name: {}", block_name);
                 println!("   The file is now stored as a content-addressed block");
                 println!("   It can be accessed via block ID or original name");
-            }
-            Err(e) => {
+            },
+            | Err(e) => {
                 println!("❌ Failed to convert file: {}", e);
-            }
+            },
         }
     }
     Ok(())
@@ -770,10 +702,7 @@ fn print_help(is_authenticated: bool) {
 fn print_banner() {
     println!("╔══════════════════════════════════════════════════════════════════════╗");
     println!("║  Post-Quantum Distributed Operating System (pqdos) Shell           ║");
-    println!(
-        "║                        v{} - CLI Interface                         ║",
-        VERSION
-    );
+    println!("║                        v{} - CLI Interface                         ║", VERSION);
     println!("╚══════════════════════════════════════════════════════════════════════╝");
 }
 
@@ -784,17 +713,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let user_system = create_user_system_with_demo_keys();
     match verify_self_integrity(&user_system) {
-        Ok(true) => {
+        | Ok(true) => {
             println!("✅ Self-integrity verified - Binary matches system blockchain");
-        }
-        Ok(false) => {
+        },
+        | Ok(false) => {
             println!("⚠️  Self-integrity: Binary not found in system blocks");
             println!("   This is expected during development");
             println!("   In production, this would prevent execution if verification fails");
-        }
-        Err(e) => {
+        },
+        | Err(e) => {
             println!("❌ Self-integrity error: {}", e);
-        }
+        },
     }
 
     println!("\n🚀 pqdos Shell ready. Type 'help' for available commands.\n");
@@ -805,11 +734,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
         let prompt = if state.is_authenticated {
-            let user = state
-                .current_user
-                .as_ref()
-                .map(|u| u.name.as_str())
-                .unwrap_or("?");
+            let user = state.current_user.as_ref().map(|u| u.name.as_str()).unwrap_or("?");
             format!("pqos@{}:{} $", user, state.cwd.display())
         } else {
             format!("pqos:{} $", state.cwd.display())
@@ -820,7 +745,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
-            Ok(_) => {
+            | Ok(_) => {
                 let input = input.trim();
                 if input.is_empty() {
                     continue;
@@ -828,7 +753,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 if !state.is_authenticated {
                     match handle_authentication(&mut state) {
-                        Ok(_) => {
+                        | Ok(_) => {
                             if state.is_authenticated {
                                 if let Some(ref user) = state.current_user {
                                     vfs = Some(VirtualFileSystem::new(user.name.clone()));
@@ -838,34 +763,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     );
                                 }
                             }
-                        }
-                        Err(e) => {
+                        },
+                        | Err(e) => {
                             println!("❌ Authentication error: {}", e);
-                        }
+                        },
                     }
                     continue;
                 }
 
                 match process_command(&mut state, &mut vfs, input) {
-                    Ok(false) => {
+                    | Ok(false) => {
                         println!("\n👋 Goodbye!");
                         break;
-                    }
-                    Ok(true) => {
+                    },
+                    | Ok(true) => {
                         continue;
-                    }
-                    Err(e) => {
+                    },
+                    | Err(e) => {
                         println!("❌ Error: {}", e);
                         continue;
-                    }
+                    },
                 }
-            }
-            Err(e) => {
+            },
+            | Err(e) => {
                 if e.kind() != io::ErrorKind::Interrupted {
                     println!("\n❌ Input error: {}", e);
                 }
                 break;
-            }
+            },
         }
     }
 

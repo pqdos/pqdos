@@ -118,9 +118,9 @@ impl UserRole {
     /// Get the role as a string
     pub fn as_str(&self) -> &str {
         match self {
-            UserRole::Genesis => "genesis",
-            UserRole::Admin => "admin",
-            UserRole::User => "user",
+            | UserRole::Genesis => "genesis",
+            | UserRole::Admin => "admin",
+            | UserRole::User => "user",
         }
     }
 }
@@ -248,15 +248,7 @@ impl User {
         let mut metadata = HashMap::new();
         metadata.insert("created_by".to_string(), "system".to_string());
 
-        Self {
-            id,
-            name,
-            public_key,
-            role,
-            permissions,
-            created_at,
-            metadata,
-        }
+        Self { id, name, public_key, role, permissions, created_at, metadata }
     }
 
     /// Create the genesis user
@@ -264,8 +256,7 @@ impl User {
         let permissions = UserPermissions::full();
 
         let mut user = Self::new(name, public_key, UserRole::Genesis, permissions);
-        user.metadata
-            .insert("type".to_string(), "genesis".to_string());
+        user.metadata.insert("type".to_string(), "genesis".to_string());
         user.metadata.insert(
             "description".to_string(),
             "System genesis user - owner of OS executable blocks".to_string(),
@@ -419,14 +410,7 @@ impl Block {
         let mut metadata = HashMap::new();
         metadata.insert("type".to_string(), block_type.clone());
 
-        Self {
-            id,
-            data,
-            owner_id,
-            created_at,
-            block_type,
-            metadata,
-        }
+        Self { id, data, owner_id, created_at, block_type, metadata }
     }
 
     pub fn is_system_block(&self) -> bool {
@@ -497,17 +481,13 @@ impl ExecutableBlock {
         executable_type: String,
     ) -> Self {
         let block_type = match executable_type.as_str() {
-            "kernel" | "bootstrap" | "driver" | "service" => "system_executable".to_string(),
-            _ => "executable".to_string(),
+            | "kernel" | "bootstrap" | "driver" | "service" => "system_executable".to_string(),
+            | _ => "executable".to_string(),
         };
 
         let inner = Block::new(code, owner_id, block_type);
 
-        Self {
-            inner,
-            entry_point,
-            executable_type,
-        }
+        Self { inner, entry_point, executable_type }
     }
 
     pub fn code(&self) -> &[u8] {
@@ -678,10 +658,7 @@ impl UserSystem {
             let mut user_blocks = self.user_blocks.write();
 
             blocks.insert(block_id.clone(), block);
-            user_blocks
-                .entry(owner_id)
-                .or_default()
-                .push(block_id.clone());
+            user_blocks.entry(owner_id).or_default().push(block_id.clone());
         }
 
         Ok(block_id)
@@ -701,17 +678,13 @@ impl UserSystem {
             .ok_or("System not initialized with genesis user".to_string())?;
 
         // Create the block with the genesis user as owner
-        let block_id = self.create_block(
-            code,
-            genesis_user.id.clone(),
-            "system_executable".to_string(),
-        )?;
+        let block_id =
+            self.create_block(code, genesis_user.id.clone(), "system_executable".to_string())?;
 
         // Create and store the executable
         {
-            let block = self
-                .get_block(&block_id)
-                .ok_or("Failed to retrieve created block".to_string())?;
+            let block =
+                self.get_block(&block_id).ok_or("Failed to retrieve created block".to_string())?;
 
             let executable = ExecutableBlock::new(
                 block.data.clone(),
@@ -751,8 +724,8 @@ impl UserSystem {
         let user_id = genesis.as_ref().map(|g| &g.id);
 
         match user_id {
-            Some(id) => self.get_user_blocks(id),
-            None => Vec::new(),
+            | Some(id) => self.get_user_blocks(id),
+            | None => Vec::new(),
         }
     }
 
@@ -772,8 +745,8 @@ impl UserSystem {
     pub fn is_system_block(&self, block_id: &BlockId) -> bool {
         let owner_id = self.get_block_owner(block_id);
         match owner_id {
-            Some(owner) => self.is_genesis_user(&owner),
-            None => false,
+            | Some(owner) => self.is_genesis_user(&owner),
+            | None => false,
         }
     }
 }
@@ -788,8 +761,7 @@ impl UserSystemTrait for UserSystem {
     type Error = UserSystemError;
 
     fn initialize(&mut self, name: String, public_key: Vec<u8>) -> Result<(), Self::Error> {
-        self.initialize(name, public_key)
-            .map_err(|e| UserSystemError::InternalError(e))
+        self.initialize(name, public_key).map_err(|e| UserSystemError::InternalError(e))
     }
 
     fn initialize_with_futuros(&mut self, public_key: Vec<u8>) -> Result<(), Self::Error> {
@@ -823,8 +795,7 @@ impl UserSystemTrait for UserSystem {
         owner_id: Self::UserId,
         block_type: String,
     ) -> Result<Self::BlockId, Self::Error> {
-        self.create_block(data, owner_id, block_type)
-            .map_err(|e| UserSystemError::InternalError(e))
+        self.create_block(data, owner_id, block_type).map_err(|e| UserSystemError::InternalError(e))
     }
 
     fn register_system_executable(
@@ -928,12 +899,7 @@ impl ExecutableBlockBuilderTrait for SimpleExecutableBlockBuilder {
         entry_point: String,
         executable_type: String,
     ) -> Result<Self::ExecutableBlock, Self::Error> {
-        Ok(ExecutableBlock::new(
-            code,
-            owner_id,
-            entry_point,
-            executable_type,
-        ))
+        Ok(ExecutableBlock::new(code, owner_id, entry_point, executable_type))
     }
 }
 
@@ -954,9 +920,7 @@ impl UserSystemFactoryTrait for SimpleUserSystemFactory {
         public_key: Vec<u8>,
     ) -> Result<Self::UserSystem, Self::Error> {
         let mut system = UserSystem::new();
-        system
-            .initialize(name, public_key)
-            .map_err(|e| UserSystemError::InternalError(e))?;
+        system.initialize(name, public_key).map_err(|e| UserSystemError::InternalError(e))?;
         Ok(system)
     }
 
@@ -976,10 +940,7 @@ impl UserSystemFactoryTrait for SimpleUserSystemFactory {
 /// Helper function to get current timestamp
 fn timestamp() -> i64 {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64
 }
 
 /// Convenience function to create and initialize a new user system
@@ -1155,12 +1116,8 @@ mod tests {
         let _block_id_trait: &dyn BlockIdTrait = &block_id;
         let block = Block::new(vec![1, 2, 3], user_id, "test".to_string());
         let _block_trait: &dyn BlockTrait = &block;
-        let executable = ExecutableBlock::new(
-            vec![1, 2, 3],
-            user_id,
-            "main".to_string(),
-            "kernel".to_string(),
-        );
+        let executable =
+            ExecutableBlock::new(vec![1, 2, 3], user_id, "main".to_string(), "kernel".to_string());
         let _exec_trait: &dyn ExecutableBlockTrait = &executable;
 
         let mut system = UserSystem::new();

@@ -92,18 +92,18 @@ pub enum UserError {
 impl From<UserSystemError> for UserError {
     fn from(error: UserSystemError) -> Self {
         match error {
-            UserSystemError::UserNotFound => UserError::UserNotFound,
-            UserSystemError::UserAlreadyExists => UserError::UserAlreadyExists,
-            UserSystemError::SystemNotInitialized => UserError::SystemNotInitialized,
-            UserSystemError::PermissionDenied => UserError::PermissionDenied,
-            UserSystemError::InvalidOperation(msg) => UserError::InvalidOperation(msg),
-            UserSystemError::InternalError(msg) => UserError::InternalError(msg),
-            UserSystemError::BlockNotFound => {
+            | UserSystemError::UserNotFound => UserError::UserNotFound,
+            | UserSystemError::UserAlreadyExists => UserError::UserAlreadyExists,
+            | UserSystemError::SystemNotInitialized => UserError::SystemNotInitialized,
+            | UserSystemError::PermissionDenied => UserError::PermissionDenied,
+            | UserSystemError::InvalidOperation(msg) => UserError::InvalidOperation(msg),
+            | UserSystemError::InternalError(msg) => UserError::InternalError(msg),
+            | UserSystemError::BlockNotFound => {
                 UserError::InvalidOperation("Block not found".to_string())
-            }
-            UserSystemError::BlockAlreadyExists => {
+            },
+            | UserSystemError::BlockAlreadyExists => {
                 UserError::InvalidOperation("Block already exists".to_string())
-            }
+            },
         }
     }
 }
@@ -120,10 +120,7 @@ pub struct AuthTokenCompat {
 impl AuthTokenCompat {
     pub fn is_expired(&self) -> bool {
         use std::time::{SystemTime, UNIX_EPOCH};
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
         now > self.expires_at
     }
 }
@@ -153,18 +150,12 @@ impl UserAuthenticatorCompat {
         challenge: &[u8],
         _signature: &[u8],
     ) -> Result<AuthResultCompat, UserError> {
-        let user = self
-            .user_system
-            .get_user(user_id)
-            .ok_or(UserError::UserNotFound)?;
+        let user = self.user_system.get_user(user_id).ok_or(UserError::UserNotFound)?;
 
         use sha2::{Digest, Sha256};
         use std::time::{SystemTime, UNIX_EPOCH};
 
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
 
         let mut hasher = Sha256::new();
         hasher.update(user_id.as_bytes());
@@ -187,10 +178,7 @@ impl UserAuthenticatorCompat {
         use sha2::{Digest, Sha256};
         use std::time::{SystemTime, UNIX_EPOCH};
 
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
 
         let mut hasher = Sha256::new();
         hasher.update(now.to_be_bytes());
@@ -203,10 +191,7 @@ impl UserAuthenticatorCompat {
             return Err(UserError::InvalidOperation("Token expired".to_string()));
         }
 
-        let user = self
-            .user_system
-            .get_user(&token.user_id)
-            .ok_or(UserError::UserNotFound)?;
+        let user = self.user_system.get_user(&token.user_id).ok_or(UserError::UserNotFound)?;
 
         Ok(user)
     }
@@ -218,9 +203,7 @@ impl UserAuthenticatorCompat {
 
     /// Get the genesis user
     pub fn get_genesis_user(&self) -> Result<User, UserError> {
-        self.user_system
-            .get_genesis_user()
-            .ok_or(UserError::UserNotFound)
+        self.user_system.get_genesis_user().ok_or(UserError::UserNotFound)
     }
 }
 
@@ -287,9 +270,8 @@ mod tests {
         let challenge = authenticator.generate_challenge();
         let dummy_signature = vec![0u8; 64];
 
-        let auth_result = authenticator
-            .authenticate(&genesis_user.id, &challenge, &dummy_signature)
-            .unwrap();
+        let auth_result =
+            authenticator.authenticate(&genesis_user.id, &challenge, &dummy_signature).unwrap();
 
         let validated_user = authenticator.validate_token(&auth_result.token).unwrap();
         assert_eq!(validated_user.id, genesis_user.id);

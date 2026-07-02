@@ -92,11 +92,7 @@ pub struct MemoryPermissions {
 
 impl MemoryPermissions {
     pub fn new(read: bool, write: bool, execute: bool) -> Self {
-        Self {
-            read,
-            write,
-            execute,
-        }
+        Self { read, write, execute }
     }
 
     pub fn none() -> Self {
@@ -104,35 +100,19 @@ impl MemoryPermissions {
     }
 
     pub fn read_only() -> Self {
-        Self {
-            read: true,
-            write: false,
-            execute: false,
-        }
+        Self { read: true, write: false, execute: false }
     }
 
     pub fn read_write() -> Self {
-        Self {
-            read: true,
-            write: true,
-            execute: false,
-        }
+        Self { read: true, write: true, execute: false }
     }
 
     pub fn read_execute() -> Self {
-        Self {
-            read: true,
-            write: false,
-            execute: true,
-        }
+        Self { read: true, write: false, execute: true }
     }
 
     pub fn full() -> Self {
-        Self {
-            read: true,
-            write: true,
-            execute: true,
-        }
+        Self { read: true, write: true, execute: true }
     }
 }
 
