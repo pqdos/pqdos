@@ -3,13 +3,18 @@
 //! These traits define interfaces for blockchain functionality,
 //! including transactions, consensus algorithms, and distributed ledger management.
 
-use crate::block::traits::{Block, BlockId, BlockStorage};
-use crate::crypto::traits::{HashFunction, SignatureScheme};
+use crate::block::traits::{Block, BlockStorage};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::result::Result;
 use std::sync::Arc;
+
+// Type aliases for complex callback signatures to satisfy clippy
+pub type NewBlockCallback<B> = Arc<dyn Fn(&B) + Send + Sync>;
+pub type NewTransactionCallback<T> = Arc<dyn Fn(&T) + Send + Sync>;
+pub type ConsensusCallback = Arc<dyn Fn(ConsensusState) + Send + Sync>;
+pub type SyncCallback = Arc<dyn Fn(&[u8], u64) + Send + Sync>;
 
 /// Trait for a transaction identifier
 pub trait TransactionId:
@@ -434,22 +439,24 @@ pub trait BlockchainEvents: Send + Sync {
     type Blockchain: Blockchain;
 
     /// Subscribe to new block events
+    #[allow(clippy::type_complexity)]
     fn on_new_block(
         &mut self,
         callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Block) + Send + Sync>,
     );
 
     /// Subscribe to new transaction events
+    #[allow(clippy::type_complexity)]
     fn on_new_transaction(
         &mut self,
         callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Transaction) + Send + Sync>,
     );
 
     /// Subscribe to consensus state change events
-    fn on_consensus_state_change(&mut self, callback: Arc<dyn Fn(ConsensusState) + Send + Sync>);
+    fn on_consensus_state_change(&mut self, callback: ConsensusCallback);
 
     /// Subscribe to sync events
-    fn on_sync(&mut self, callback: Arc<dyn Fn(&[u8], u64) + Send + Sync>); // peer_id, height
+    fn on_sync(&mut self, callback: SyncCallback); // peer_id, height
 }
 
 /// Trait for blockchain synchronization
@@ -469,6 +476,7 @@ pub trait BlockchainSync: Send + Sync {
     fn sync_status(&self) -> SyncStatus;
 
     /// Get the list of blocks that need to be synchronized
+    #[allow(clippy::type_complexity)]
     fn pending_blocks(
         &self,
     ) -> Result<Vec<<<Self::Blockchain as Blockchain>::Block as Block>::Id>, Self::Error>;

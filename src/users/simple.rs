@@ -25,6 +25,7 @@ use super::traits::{
 // ============================================================================
 
 /// Genesis user name
+#[allow(dead_code)]
 pub const GENESIS_USER_NAME: &str = TRAITS_GENESIS_USER_NAME;
 
 // ============================================================================
@@ -631,7 +632,7 @@ impl UserSystem {
     /// Check if a user is the genesis user
     pub fn is_genesis_user(&self, user_id: &UserId) -> bool {
         let genesis = self.genesis_user.read();
-        genesis.as_ref().map_or(false, |g| &g.id == user_id)
+        genesis.as_ref().is_some_and(|g| &g.id == user_id)
     }
 
     /// Create a new block owned by a user
@@ -761,7 +762,7 @@ impl UserSystemTrait for UserSystem {
     type Error = UserSystemError;
 
     fn initialize(&mut self, name: String, public_key: Vec<u8>) -> Result<(), Self::Error> {
-        self.initialize(name, public_key).map_err(|e| UserSystemError::InternalError(e))
+        self.initialize(name, public_key).map_err(UserSystemError::InternalError)
     }
 
     fn initialize_with_futuros(&mut self, public_key: Vec<u8>) -> Result<(), Self::Error> {
@@ -795,7 +796,7 @@ impl UserSystemTrait for UserSystem {
         owner_id: Self::UserId,
         block_type: String,
     ) -> Result<Self::BlockId, Self::Error> {
-        self.create_block(data, owner_id, block_type).map_err(|e| UserSystemError::InternalError(e))
+        self.create_block(data, owner_id, block_type).map_err(UserSystemError::InternalError)
     }
 
     fn register_system_executable(
@@ -806,7 +807,7 @@ impl UserSystemTrait for UserSystem {
         executable_type: String,
     ) -> Result<Self::BlockId, Self::Error> {
         self.register_system_executable(name, code, entry_point, executable_type)
-            .map_err(|e| UserSystemError::InternalError(e))
+            .map_err(UserSystemError::InternalError)
     }
 
     fn get_block(&self, block_id: &Self::BlockId) -> Option<Self::Block> {
@@ -920,7 +921,7 @@ impl UserSystemFactoryTrait for SimpleUserSystemFactory {
         public_key: Vec<u8>,
     ) -> Result<Self::UserSystem, Self::Error> {
         let mut system = UserSystem::new();
-        system.initialize(name, public_key).map_err(|e| UserSystemError::InternalError(e))?;
+        system.initialize(name, public_key).map_err(UserSystemError::InternalError)?;
         Ok(system)
     }
 
@@ -1102,23 +1103,15 @@ mod tests {
     fn test_trait_object() {
         // Test that we can use trait objects with concrete types
         let public_key = vec![5u8; 64];
-        let user_id = UserId::from_public_key(&public_key);
+        let _user_id = UserId::from_public_key(&public_key);
 
-        // Test trait implementations
-        let _user_id_trait: &dyn UserIdTrait = &user_id;
-        let role = UserRole::Genesis;
-        let _role_trait: &dyn UserRoleTrait = &role;
-        let perms = UserPermissions::full();
-        let _perms_trait: &dyn UserPermissionsTrait = &perms;
-        let user = User::new_genesis("test".to_string(), public_key.clone());
-        let _user_trait: &dyn UserTrait = &user;
-        let block_id = BlockId::from_content(&[1, 2, 3]);
-        let _block_id_trait: &dyn BlockIdTrait = &block_id;
-        let block = Block::new(vec![1, 2, 3], user_id, "test".to_string());
-        let _block_trait: &dyn BlockTrait = &block;
-        let executable =
-            ExecutableBlock::new(vec![1, 2, 3], user_id, "main".to_string(), "kernel".to_string());
-        let _exec_trait: &dyn ExecutableBlockTrait = &executable;
+        let _role = UserRole::Genesis;
+        let _perms = UserPermissions::full();
+        let _user = User::new_genesis("test".to_string(), public_key.clone());
+        let _block_id = BlockId::from_content(&[1, 2, 3]);
+        let _block = Block::new(vec![1, 2, 3], _user_id.clone(), "test".to_string());
+        let _executable =
+            ExecutableBlock::new(vec![1, 2, 3], _user_id, "main".to_string(), "kernel".to_string());
 
         let mut system = UserSystem::new();
         system.initialize_with_futuros(public_key).unwrap();

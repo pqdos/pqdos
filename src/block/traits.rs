@@ -3,10 +3,9 @@
 //! These traits define interfaces for content-addressed block storage,
 //! enabling Git-like hashing and blockchain-based history tracking.
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use std::result::Result;
-use std::sync::Arc;
 
 /// Trait for a block identifier (content address)
 ///

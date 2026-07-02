@@ -18,10 +18,9 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn it_works() {
+        // Test that the library can be imported
         assert_eq!(2 + 2, 4);
     }
 }

@@ -5,7 +5,7 @@
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
-use std::net::{IpAddr, SocketAddr};
+use std::net::SocketAddr;
 use std::result::Result;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -204,6 +204,7 @@ pub trait NetworkProtocol: Send + Sync {
     fn set_connection_handler(&mut self, handler: Arc<dyn Fn(Self::Peer) + Send + Sync>);
 
     /// Set a disconnection handler
+    #[allow(clippy::type_complexity)]
     fn set_disconnection_handler(
         &mut self,
         handler: Arc<dyn Fn(&<Self::Peer as Peer>::Id) + Send + Sync>,

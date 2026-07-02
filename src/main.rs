@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::{self, BufRead, BufReader, Read, Write};
+use std::io::{self, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -18,7 +18,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::Local;
 use parking_lot::RwLock;
 use pqdos::users::{
-    create_user_system_with_demo_keys, User, UserId, UserPermissions, UserRole, UserSystem,
+    create_user_system_with_demo_keys, User, UserPermissions, UserRole, UserSystem,
 };
 use sha2::{Digest, Sha256};
 
@@ -204,6 +204,7 @@ fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
+#[allow(dead_code)]
 fn hex_decode(hex: &str) -> Result<Vec<u8>, String> {
     (0..hex.len())
         .step_by(2)
@@ -225,7 +226,7 @@ fn login_user(state: &mut ShellState) -> Result<(), String> {
     let genesis_user = {
         let user_system = state.user_system.read();
         if username == GENESIS_USER_NAME {
-            user_system.get_genesis_user().map(|u| u.clone())
+            user_system.get_genesis_user()
         } else {
             None
         }
@@ -539,7 +540,7 @@ fn list_virtual_directory(vfs: &VirtualFileSystem) -> Result<(), String> {
         return Ok(());
     }
     println!("\nMemory Blocks:");
-    println!("{:<6} {:<40} {:<16} {:<12} {}", "#", "Block ID", "Type", "Size", "Name");
+    println!("{:<6} {:<40} {:<16} {:<12} Name", "#", "Block ID", "Type", "Size");
     println!("{}", "-".repeat(80));
     for (i, block) in blocks.iter().enumerate() {
         let size = block.size();
@@ -562,6 +563,7 @@ fn list_virtual_directory(vfs: &VirtualFileSystem) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(deprecated)]
 fn list_user_blocks(vfs: &VirtualFileSystem) -> Result<(), String> {
     let blocks = vfs.list_blocks();
     if blocks.is_empty() {
@@ -570,10 +572,7 @@ fn list_user_blocks(vfs: &VirtualFileSystem) -> Result<(), String> {
         return Ok(());
     }
     println!("\nMemory Blocks owned by {}:", vfs.user_name);
-    println!(
-        "{:<6} {:<40} {:<16} {:<12} {:<20} {}",
-        "#", "Block ID", "Type", "Size", "Created", "Name"
-    );
+    println!("{:<6} {:<40} {:<16} {:<12} {:<20} Name", "#", "Block ID", "Type", "Size", "Created");
     println!("{}", "-".repeat(100));
     for (i, block) in blocks.iter().enumerate() {
         let size = block.size();
@@ -601,6 +600,7 @@ fn list_user_blocks(vfs: &VirtualFileSystem) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(deprecated)]
 fn print_block_info(block: &MemoryBlock) -> Result<(), String> {
     println!("\nBlock Information:");
     println!("  ID: {}", block.id_hex());
@@ -618,7 +618,7 @@ fn print_block_info(block: &MemoryBlock) -> Result<(), String> {
         .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
         .unwrap_or_else(|| "Unknown".to_string());
     println!("  Created: {}", created);
-    println!("  Signature: {}...", hex_encode(&block.signature)[..16].to_string());
+    println!("  Signature: {}...", &hex_encode(&block.signature)[..16]);
     Ok(())
 }
 

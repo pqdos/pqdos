@@ -7,7 +7,7 @@
 //! The key design principle: The genesis user "futuros" owns all system executable blocks,
 //! and its private key is NEVER stored or accessible through the system.
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use std::result::Result;
 

@@ -4,8 +4,6 @@
 //! committing to specific implementations or libraries.
 //! They allow for pluggable cryptography (PQC, classical, etc.).
 
-use std::sync::Arc;
-
 /// Error type for cryptographic operations
 pub type CryptoResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 

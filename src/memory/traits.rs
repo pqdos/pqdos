@@ -5,12 +5,11 @@
 //! with blockchain-based history tracking.
 
 use crate::block::traits::{
-    Block, BlockId, BlockStorage, ContentAddressedStorage, EncryptedBlock, StorageStats,
+    Block, BlockStorage, ContentAddressedStorage, EncryptedBlock, StorageStats,
 };
-use crate::crypto::traits::{HashFunction, SignatureScheme, SymmetricEncryption};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::Path;
 use std::result::Result;
 use std::sync::Arc;
 
@@ -197,7 +196,7 @@ pub trait MemoryManager: Send + Sync {
     /// Map a file into memory
     fn map_file(
         &mut self,
-        path: &PathBuf,
+        path: &Path,
         offset: usize,
         size: usize,
     ) -> Result<Self::RegionId, Self::Error>;
