@@ -1,0 +1,19 @@
+# Rustfmt configuration for pqdos project
+# Compatible with stable Rust toolchain
+# Documentation: https://rust-lang.github.io/rustfmt/
+
+edition = "2021"
+
+# Basic formatting options
+max_width = 100
+tab_spaces = 4
+newline_style = "Unix"
+
+# Use small heuristic for simplicity
+use_small_heuristics = "Max"
+
+# Match arm formatting
+match_arm_leading_pipes = "Always"
+
+# Trailing comma
+match_block_trailing_comma = true
