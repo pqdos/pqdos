@@ -6,25 +6,17 @@
 //! The key design principle: The genesis user's private key is NEVER stored or accessible
 //! through this system. Only the public key is stored.
 
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use sha2::{Sha256, Digest};
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 
 use super::traits::{
-    UserId as UserIdTrait,
-    UserRole as UserRoleTrait,
-    UserPermissions as UserPermissionsTrait,
-    User as UserTrait,
-    UserBuilder as UserBuilderTrait,
-    BlockId as BlockIdTrait,
-    Block as BlockTrait,
-    BlockBuilder as BlockBuilderTrait,
-    ExecutableBlock as ExecutableBlockTrait,
-    ExecutableBlockBuilder as ExecutableBlockBuilderTrait,
-    UserSystem as UserSystemTrait,
-    UserSystemFactory as UserSystemFactoryTrait,
-    UserSystemError,
+    Block as BlockTrait, BlockBuilder as BlockBuilderTrait, BlockId as BlockIdTrait,
+    ExecutableBlock as ExecutableBlockTrait, ExecutableBlockBuilder as ExecutableBlockBuilderTrait,
+    User as UserTrait, UserBuilder as UserBuilderTrait, UserId as UserIdTrait,
+    UserPermissions as UserPermissionsTrait, UserRole as UserRoleTrait,
+    UserSystem as UserSystemTrait, UserSystemError, UserSystemFactory as UserSystemFactoryTrait,
     GENESIS_USER_NAME as TRAITS_GENESIS_USER_NAME,
 };
 
@@ -50,7 +42,7 @@ impl UserId {
     pub fn new(id: Vec<u8>) -> Self {
         Self { id }
     }
-    
+
     /// Create a user ID from a public key
     pub fn from_public_key(public_key: &[u8]) -> Self {
         let mut hasher = Sha256::new();
@@ -58,12 +50,12 @@ impl UserId {
         let hash = hasher.finalize();
         Self::new(hash.to_vec())
     }
-    
+
     /// Get the raw bytes of the ID
     pub fn as_bytes(&self) -> &[u8] {
         &self.id
     }
-    
+
     /// Convert to vector
     pub fn to_vec(&self) -> Vec<u8> {
         self.id.clone()
@@ -182,12 +174,12 @@ impl UserPermissions {
 
     /// Check if these permissions are full (all true)
     pub fn is_full(&self) -> bool {
-        self.can_create_blocks &&
-        self.can_read_all_blocks &&
-        self.can_write_all_blocks &&
-        self.can_manage_users &&
-        self.can_manage_system &&
-        self.can_execute_code
+        self.can_create_blocks
+            && self.can_read_all_blocks
+            && self.can_write_all_blocks
+            && self.can_manage_users
+            && self.can_manage_system
+            && self.can_execute_code
     }
 }
 
@@ -252,10 +244,10 @@ impl User {
     ) -> Self {
         let id = UserId::from_public_key(&public_key);
         let created_at = timestamp();
-        
+
         let mut metadata = HashMap::new();
         metadata.insert("created_by".to_string(), "system".to_string());
-        
+
         Self {
             id,
             name,
@@ -266,18 +258,22 @@ impl User {
             metadata,
         }
     }
-    
+
     /// Create the genesis user
     pub fn new_genesis(name: String, public_key: Vec<u8>) -> Self {
         let permissions = UserPermissions::full();
-        
+
         let mut user = Self::new(name, public_key, UserRole::Genesis, permissions);
-        user.metadata.insert("type".to_string(), "genesis".to_string());
-        user.metadata.insert("description".to_string(), "System genesis user - owner of OS executable blocks".to_string());
-        
+        user.metadata
+            .insert("type".to_string(), "genesis".to_string());
+        user.metadata.insert(
+            "description".to_string(),
+            "System genesis user - owner of OS executable blocks".to_string(),
+        );
+
         user
     }
-    
+
     /// Check if this is the genesis user
     pub fn is_genesis(&self) -> bool {
         self.role == UserRole::Genesis
@@ -358,18 +354,18 @@ impl BlockId {
     pub fn new(id: Vec<u8>) -> Self {
         Self { id }
     }
-    
+
     pub fn from_content(content: &[u8]) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(content);
         let hash = hasher.finalize();
         Self::new(hash.to_vec())
     }
-    
+
     pub fn as_bytes(&self) -> &[u8] {
         &self.id
     }
-    
+
     pub fn to_vec(&self) -> Vec<u8> {
         self.id.clone()
     }
@@ -419,10 +415,10 @@ impl Block {
     pub fn new(data: Vec<u8>, owner_id: UserId, block_type: String) -> Self {
         let id = BlockId::from_content(&data);
         let created_at = timestamp();
-        
+
         let mut metadata = HashMap::new();
         metadata.insert("type".to_string(), block_type.clone());
-        
+
         Self {
             id,
             data,
@@ -432,7 +428,7 @@ impl Block {
             metadata,
         }
     }
-    
+
     pub fn is_system_block(&self) -> bool {
         self.block_type == "system" || self.block_type == "executable"
     }
@@ -494,29 +490,34 @@ pub struct ExecutableBlock {
 }
 
 impl ExecutableBlock {
-    pub fn new(code: Vec<u8>, owner_id: UserId, entry_point: String, executable_type: String) -> Self {
+    pub fn new(
+        code: Vec<u8>,
+        owner_id: UserId,
+        entry_point: String,
+        executable_type: String,
+    ) -> Self {
         let block_type = match executable_type.as_str() {
             "kernel" | "bootstrap" | "driver" | "service" => "system_executable".to_string(),
             _ => "executable".to_string(),
         };
-        
+
         let inner = Block::new(code, owner_id, block_type);
-        
+
         Self {
             inner,
             entry_point,
             executable_type,
         }
     }
-    
+
     pub fn code(&self) -> &[u8] {
         &self.inner.data
     }
-    
+
     pub fn id(&self) -> &BlockId {
         &self.inner.id
     }
-    
+
     pub fn owner_id(&self) -> &UserId {
         &self.inner.owner_id
     }
@@ -573,19 +574,19 @@ impl UserSystem {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Initialize the system with the genesis user
-    /// 
+    ///
     /// This method takes ONLY the public key. The private key MUST be kept externally.
     /// The private key is NEVER stored in this system and CANNOT be retrieved.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `name` - The name of the genesis user (default: "futuros")
     /// * `public_key` - The PUBLIC KEY only of the genesis user
-    /// 
+    ///
     /// # Security Note
-    /// 
+    ///
     /// The private key corresponding to this public key MUST be kept in a secure location
     /// external to this system. There is NO way to retrieve or use the private key through
     /// this system. Operations that require the private key (like signing) must be done
@@ -598,63 +599,68 @@ impl UserSystem {
                 return Err("System already initialized with genesis user".to_string());
             }
         }
-        
+
         // Create the genesis user
         let genesis_user = User::new_genesis(name.clone(), public_key.clone());
         let user_id = genesis_user.id.clone();
-        
+
         // Store the user
         {
             let mut users = self.users.write();
             let mut pk_map = self.public_key_to_user.write();
             let mut genesis = self.genesis_user.write();
-            
+
             users.insert(user_id.clone(), genesis_user.clone());
             pk_map.insert(public_key.clone(), user_id.clone());
             *genesis = Some(genesis_user);
         }
-        
+
         Ok(())
     }
-    
+
     /// Initialize with the default "futuros" user
     pub fn initialize_with_futuros(&mut self, public_key: Vec<u8>) -> Result<(), String> {
         self.initialize(TRAITS_GENESIS_USER_NAME.to_string(), public_key)
     }
-    
+
     /// Get the genesis user
     pub fn get_genesis_user(&self) -> Option<User> {
         let genesis = self.genesis_user.read();
         (*genesis).clone()
     }
-    
+
     /// Get a user by ID
     pub fn get_user(&self, user_id: &UserId) -> Option<User> {
         let users = self.users.read();
         users.get(user_id).cloned()
     }
-    
+
     /// Get a user by public key
     pub fn get_user_by_public_key(&self, public_key: &[u8]) -> Option<User> {
         let pk_map = self.public_key_to_user.read();
         let user_id = pk_map.get(public_key)?;
         self.get_user(user_id)
     }
-    
+
     /// Check if the system is initialized
     pub fn is_initialized(&self) -> bool {
         let genesis = self.genesis_user.read();
         genesis.is_some()
     }
-    
+
     /// Check if a user is the genesis user
     pub fn is_genesis_user(&self, user_id: &UserId) -> bool {
         let genesis = self.genesis_user.read();
         genesis.as_ref().map_or(false, |g| &g.id == user_id)
     }
-    
+
     /// Create a new block owned by a user
-    pub fn create_block(&mut self, data: Vec<u8>, owner_id: UserId, block_type: String) -> Result<BlockId, String> {
+    pub fn create_block(
+        &mut self,
+        data: Vec<u8>,
+        owner_id: UserId,
+        block_type: String,
+    ) -> Result<BlockId, String> {
         // Verify the user exists
         {
             let users = self.users.read();
@@ -662,22 +668,25 @@ impl UserSystem {
                 return Err("User not found".to_string());
             }
         }
-        
+
         let block = Block::new(data, owner_id.clone(), block_type);
         let block_id = block.id.clone();
-        
+
         // Store the block
         {
             let mut blocks = self.blocks.write();
             let mut user_blocks = self.user_blocks.write();
-            
+
             blocks.insert(block_id.clone(), block);
-            user_blocks.entry(owner_id).or_default().push(block_id.clone());
+            user_blocks
+                .entry(owner_id)
+                .or_default()
+                .push(block_id.clone());
         }
-        
+
         Ok(block_id)
     }
-    
+
     /// Register a system executable owned by the genesis user
     pub fn register_system_executable(
         &mut self,
@@ -687,72 +696,78 @@ impl UserSystem {
         executable_type: String,
     ) -> Result<BlockId, String> {
         // Get the genesis user
-        let genesis_user = self.get_genesis_user()
+        let genesis_user = self
+            .get_genesis_user()
             .ok_or("System not initialized with genesis user".to_string())?;
-        
+
         // Create the block with the genesis user as owner
-        let block_id = self.create_block(code, genesis_user.id.clone(), "system_executable".to_string())?;
-        
+        let block_id = self.create_block(
+            code,
+            genesis_user.id.clone(),
+            "system_executable".to_string(),
+        )?;
+
         // Create and store the executable
         {
-            let block = self.get_block(&block_id)
+            let block = self
+                .get_block(&block_id)
                 .ok_or("Failed to retrieve created block".to_string())?;
-            
+
             let executable = ExecutableBlock::new(
                 block.data.clone(),
                 block.owner_id.clone(),
                 entry_point,
                 executable_type,
             );
-            
+
             let mut executables = self.executables.write();
             executables.insert(block_id.clone(), executable);
         }
-        
+
         Ok(block_id)
     }
-    
+
     /// Get a block by ID
     pub fn get_block(&self, block_id: &BlockId) -> Option<Block> {
         let blocks = self.blocks.read();
         blocks.get(block_id).cloned()
     }
-    
+
     /// Get the owner of a block
     pub fn get_block_owner(&self, block_id: &BlockId) -> Option<UserId> {
         let blocks = self.blocks.read();
         blocks.get(block_id).map(|b| b.owner_id.clone())
     }
-    
+
     /// Get all blocks owned by a user
     pub fn get_user_blocks(&self, user_id: &UserId) -> Vec<BlockId> {
         let user_blocks = self.user_blocks.read();
         user_blocks.get(user_id).cloned().unwrap_or_default()
     }
-    
+
     /// Get all system blocks (owned by genesis user)
     pub fn get_system_blocks(&self) -> Vec<BlockId> {
         let genesis = self.genesis_user.read();
         let user_id = genesis.as_ref().map(|g| &g.id);
-        
+
         match user_id {
             Some(id) => self.get_user_blocks(id),
             None => Vec::new(),
         }
     }
-    
+
     /// Get a system executable by block ID
     pub fn get_system_executable(&self, block_id: &BlockId) -> Option<ExecutableBlock> {
         let executables = self.executables.read();
         executables.get(block_id).cloned()
     }
-    
+
     /// List all system executables
     pub fn list_system_executables(&self) -> Vec<ExecutableBlock> {
         let executables = self.executables.read();
         executables.values().cloned().collect()
     }
-    
+
     /// Verify that a block is a system block (owned by genesis user)
     pub fn is_system_block(&self, block_id: &BlockId) -> bool {
         let owner_id = self.get_block_owner(block_id);
@@ -873,7 +888,11 @@ impl UserBuilderTrait for SimpleUserBuilder {
         Ok(User::new(name, public_key, role, permissions))
     }
 
-    fn new_genesis_user(&self, name: String, public_key: Vec<u8>) -> Result<Self::User, Self::Error> {
+    fn new_genesis_user(
+        &self,
+        name: String,
+        public_key: Vec<u8>,
+    ) -> Result<Self::User, Self::Error> {
         Ok(User::new_genesis(name, public_key))
     }
 }
@@ -909,7 +928,12 @@ impl ExecutableBlockBuilderTrait for SimpleExecutableBlockBuilder {
         entry_point: String,
         executable_type: String,
     ) -> Result<Self::ExecutableBlock, Self::Error> {
-        Ok(ExecutableBlock::new(code, owner_id, entry_point, executable_type))
+        Ok(ExecutableBlock::new(
+            code,
+            owner_id,
+            entry_point,
+            executable_type,
+        ))
     }
 }
 
@@ -924,15 +948,23 @@ impl UserSystemFactoryTrait for SimpleUserSystemFactory {
         UserSystem::new()
     }
 
-    fn create_initialized(&self, name: String, public_key: Vec<u8>) -> Result<Self::UserSystem, Self::Error> {
+    fn create_initialized(
+        &self,
+        name: String,
+        public_key: Vec<u8>,
+    ) -> Result<Self::UserSystem, Self::Error> {
         let mut system = UserSystem::new();
-        system.initialize(name, public_key).map_err(|e| UserSystemError::InternalError(e))?;
+        system
+            .initialize(name, public_key)
+            .map_err(|e| UserSystemError::InternalError(e))?;
         Ok(system)
     }
 
     fn create_with_futuros(&self, public_key: Vec<u8>) -> Result<Self::UserSystem, Self::Error> {
         let mut system = UserSystem::new();
-        system.initialize_with_futuros(public_key).map_err(|e| UserSystemError::InternalError(e.to_string()))?;
+        system
+            .initialize_with_futuros(public_key)
+            .map_err(|e| UserSystemError::InternalError(e.to_string()))?;
         Ok(system)
     }
 }
@@ -958,7 +990,7 @@ pub fn create_user_system(public_key: Vec<u8>) -> Result<UserSystem, String> {
 }
 
 /// Convenience function to create a user system with a generated key pair
-/// 
+///
 /// WARNING: This generates a key pair and DISCARDS the private key.
 /// The private key CANNOT be retrieved from this system.
 /// This is only for testing/demonstration.
@@ -966,7 +998,7 @@ pub fn create_user_system_with_demo_keys() -> UserSystem {
     // In a real system, you would generate a proper PQC key pair here
     // For demo purposes, we'll use a mock public key
     let demo_public_key = vec![0u8; 64]; // Mock 512-bit public key
-    
+
     create_user_system(demo_public_key).expect("Failed to create user system")
 }
 
@@ -977,138 +1009,140 @@ pub fn create_user_system_with_demo_keys() -> UserSystem {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_system_initialization() {
         let mut system = UserSystem::new();
         let public_key = vec![1u8; 64];
-        
+
         let result = system.initialize_with_futuros(public_key.clone());
         assert!(result.is_ok());
-        
+
         assert!(system.is_initialized());
-        
+
         let genesis_user = system.get_genesis_user();
         assert!(genesis_user.is_some());
-        
+
         let user = genesis_user.unwrap();
         assert_eq!(user.name, TRAITS_GENESIS_USER_NAME);
         assert_eq!(user.public_key, public_key);
         assert!(user.is_genesis());
     }
-    
+
     #[test]
     fn test_trait_implementation() {
         // Test that UserId implements UserIdTrait
         let public_key = vec![1u8; 64];
         let user_id = UserId::from_public_key(&public_key);
-        
+
         // Test UserId trait methods
         assert_eq!(user_id.to_bytes().len(), 32); // SHA256 hash is 32 bytes
         assert_eq!(user_id.size(), 32);
-        
+
         // Test UserRole trait
         let role = UserRole::Genesis;
         assert!(role.is_genesis());
         assert!(!role.is_admin());
         assert!(!role.is_user());
         assert_eq!(role.as_str(), "genesis");
-        
+
         // Test UserPermissions trait
         let perms = UserPermissions::full();
         assert!(perms.is_full());
         assert!(perms.can_create_blocks());
         assert!(perms.can_execute_code());
     }
-    
+
     #[test]
     fn test_system_block_ownership() {
         let mut system = UserSystem::new();
         let public_key = vec![2u8; 64];
-        
+
         system.initialize_with_futuros(public_key).unwrap();
-        
+
         // Register a system executable
         let code = vec![0u8, 1, 2, 3, 4];
-        let block_id = system.register_system_executable(
-            "kernel".to_string(),
-            code.clone(),
-            "main".to_string(),
-            "kernel".to_string(),
-        ).unwrap();
-        
+        let block_id = system
+            .register_system_executable(
+                "kernel".to_string(),
+                code.clone(),
+                "main".to_string(),
+                "kernel".to_string(),
+            )
+            .unwrap();
+
         // Verify the block is owned by genesis user
         let owner_id = system.get_block_owner(&block_id).unwrap();
         let genesis_user = system.get_genesis_user().unwrap();
-        
+
         assert_eq!(owner_id, genesis_user.id);
         assert!(system.is_system_block(&block_id));
-        
+
         // Verify the executable is stored
         let executable = system.get_system_executable(&block_id).unwrap();
         assert_eq!(executable.code(), &code);
         assert_eq!(executable.entry_point(), "main");
     }
-    
+
     #[test]
     fn test_block_trait_implementation() {
         let public_key = vec![1u8; 64];
         let user_id = UserId::from_public_key(&public_key);
-        
+
         let data = vec![1, 2, 3, 4, 5];
         let block = Block::new(data.clone(), user_id, "test".to_string());
-        
+
         // Test Block trait methods
         assert_eq!(block.data(), &data);
         assert_eq!(block.data_size(), 5);
         assert_eq!(block.block_type(), "test");
         assert!(!block.is_system_block());
     }
-    
+
     #[test]
     fn test_private_key_not_accessible() {
         // This test verifies the fundamental security property:
         // There is NO way to access the private key through the UserSystem
-        
+
         let mut system = UserSystem::new();
         let public_key = vec![3u8; 64];
         let public_key_copy = public_key.clone();
-        
+
         system.initialize_with_futuros(public_key).unwrap();
-        
+
         // The User structure only contains the public key
         let genesis_user = system.get_genesis_user().unwrap();
-        
+
         // There is no private key field in User
         // There is no method to get the private key
         // The private key was NEVER provided to the system
-        
+
         // We can only access the public key
         assert_eq!(genesis_user.public_key(), &public_key_copy);
-        
+
         // This test passes because the system is designed to NEVER have access
         // to the private key
     }
-    
+
     #[test]
     fn test_factory_creation() {
         let factory = SimpleUserSystemFactory;
         let public_key = vec![4u8; 64];
-        
+
         // Test creating a user system with factory
         let system = factory.create_with_futuros(public_key.clone()).unwrap();
-        
+
         assert!(system.is_initialized());
         let genesis = system.get_genesis_user().unwrap();
         assert_eq!(genesis.name(), TRAITS_GENESIS_USER_NAME);
     }
-    
+
     #[test]
     fn test_trait_object() {
         // Test that we can use trait objects with concrete types
         let public_key = vec![5u8; 64];
         let user_id = UserId::from_public_key(&public_key);
-        
+
         // Test trait implementations
         let _user_id_trait: &dyn UserIdTrait = &user_id;
         let role = UserRole::Genesis;
@@ -1121,9 +1155,14 @@ mod tests {
         let _block_id_trait: &dyn BlockIdTrait = &block_id;
         let block = Block::new(vec![1, 2, 3], user_id, "test".to_string());
         let _block_trait: &dyn BlockTrait = &block;
-        let executable = ExecutableBlock::new(vec![1, 2, 3], user_id, "main".to_string(), "kernel".to_string());
+        let executable = ExecutableBlock::new(
+            vec![1, 2, 3],
+            user_id,
+            "main".to_string(),
+            "kernel".to_string(),
+        );
         let _exec_trait: &dyn ExecutableBlockTrait = &executable;
-        
+
         let mut system = UserSystem::new();
         system.initialize_with_futuros(public_key).unwrap();
         // UserSystemTrait can be used directly

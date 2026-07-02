@@ -4,35 +4,29 @@
 //! treating all storage (RAM, files, etc.) as content-addressed encrypted blocks
 //! with blockchain-based history tracking.
 
-use std::sync::Arc;
+use crate::block::traits::{
+    Block, BlockId, BlockStorage, ContentAddressedStorage, EncryptedBlock, StorageStats,
+};
+use crate::crypto::traits::{HashFunction, SignatureScheme, SymmetricEncryption};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::result::Result;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
-use crate::block::traits::{Block, BlockId, BlockStorage, ContentAddressedStorage, EncryptedBlock, StorageStats};
-use crate::crypto::traits::{HashFunction, SymmetricEncryption, SignatureScheme};
+use std::sync::Arc;
 
 /// Memory address type
 pub type MemoryAddress = Vec<u8>;
 
 /// Trait for a memory region identifier
 pub trait MemoryRegionId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     fn from_bytes(bytes: Vec<u8>) -> Self;
     fn to_bytes(&self) -> Vec<u8>;
 }
 
 /// Trait for a memory region
-/// 
+///
 /// Represents a contiguous region of memory that can be addressed as a whole.
 pub trait MemoryRegion: Clone + Debug + Serialize + DeserializeOwned + Send + Sync {
     /// The type of region identifier
@@ -98,7 +92,11 @@ pub struct MemoryPermissions {
 
 impl MemoryPermissions {
     pub fn new(read: bool, write: bool, execute: bool) -> Self {
-        Self { read, write, execute }
+        Self {
+            read,
+            write,
+            execute,
+        }
     }
 
     pub fn none() -> Self {
@@ -106,24 +104,40 @@ impl MemoryPermissions {
     }
 
     pub fn read_only() -> Self {
-        Self { read: true, write: false, execute: false }
+        Self {
+            read: true,
+            write: false,
+            execute: false,
+        }
     }
 
     pub fn read_write() -> Self {
-        Self { read: true, write: true, execute: false }
+        Self {
+            read: true,
+            write: true,
+            execute: false,
+        }
     }
 
     pub fn read_execute() -> Self {
-        Self { read: true, write: false, execute: true }
+        Self {
+            read: true,
+            write: false,
+            execute: true,
+        }
     }
 
     pub fn full() -> Self {
-        Self { read: true, write: true, execute: true }
+        Self {
+            read: true,
+            write: true,
+            execute: true,
+        }
     }
 }
 
 /// Trait for a memory block
-/// 
+///
 /// Represents a fixed-size block of memory that can be addressed by content hash.
 pub trait MemoryBlock: Clone + Debug + Serialize + DeserializeOwned + Send + Sync {
     /// The type of block this wraps
@@ -152,7 +166,7 @@ pub trait MemoryBlock: Clone + Debug + Serialize + DeserializeOwned + Send + Syn
 }
 
 /// Trait for a memory manager
-/// 
+///
 /// Manages the unified memory abstraction, providing allocation,
 /// deallocation, and access to memory blocks.
 pub trait MemoryManager: Send + Sync {
@@ -166,7 +180,11 @@ pub trait MemoryManager: Send + Sync {
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Allocate a new memory region of the given size
-    fn allocate(&mut self, size: usize, region_type: MemoryRegionType) -> Result<Self::RegionId, Self::Error>;
+    fn allocate(
+        &mut self,
+        size: usize,
+        region_type: MemoryRegionType,
+    ) -> Result<Self::RegionId, Self::Error>;
 
     /// Allocate a memory region from existing data
     fn allocate_from_data(&mut self, data: Vec<u8>) -> Result<Self::RegionId, Self::Error>;
@@ -175,10 +193,20 @@ pub trait MemoryManager: Send + Sync {
     fn deallocate(&mut self, region_id: Self::RegionId) -> Result<(), Self::Error>;
 
     /// Read data from a memory region
-    fn read(&self, region_id: &Self::RegionId, offset: usize, size: usize) -> Result<Vec<u8>, Self::Error>;
+    fn read(
+        &self,
+        region_id: &Self::RegionId,
+        offset: usize,
+        size: usize,
+    ) -> Result<Vec<u8>, Self::Error>;
 
     /// Write data to a memory region
-    fn write(&mut self, region_id: &Self::RegionId, offset: usize, data: &[u8]) -> Result<(), Self::Error>;
+    fn write(
+        &mut self,
+        region_id: &Self::RegionId,
+        offset: usize,
+        data: &[u8],
+    ) -> Result<(), Self::Error>;
 
     /// Get a memory block by its content address
     fn get_block(&self, address: &MemoryAddress) -> Result<Self::Block, Self::Error>;
@@ -187,13 +215,21 @@ pub trait MemoryManager: Send + Sync {
     fn get_region(&self, region_id: &Self::RegionId) -> Result<Self::Region, Self::Error>;
 
     /// Map a file into memory
-    fn map_file(&mut self, path: &PathBuf, offset: usize, size: usize) -> Result<Self::RegionId, Self::Error>;
+    fn map_file(
+        &mut self,
+        path: &PathBuf,
+        offset: usize,
+        size: usize,
+    ) -> Result<Self::RegionId, Self::Error>;
 
     /// Unmap a file from memory
     fn unmap_file(&mut self, region_id: Self::RegionId) -> Result<(), Self::Error>;
 
     /// Create a memory-mapped view of a block storage
-    fn map_block_storage<B, E>(&mut self, storage: Arc<dyn BlockStorage<Block = B, Error = E>>) -> Result<Self::RegionId, Self::Error>
+    fn map_block_storage<B, E>(
+        &mut self,
+        storage: Arc<dyn BlockStorage<Block = B, Error = E>>,
+    ) -> Result<Self::RegionId, Self::Error>
     where
         B: Block + 'static,
         E: std::error::Error + Send + Sync + 'static;
@@ -228,7 +264,7 @@ pub struct MemoryStats {
 }
 
 /// Trait for an address space
-/// 
+///
 /// Represents a virtual address space that maps addresses to memory regions.
 pub trait AddressSpace: Send + Sync {
     /// The type of memory manager
@@ -248,7 +284,11 @@ pub trait AddressSpace: Send + Sync {
     fn free_at(&mut self, address: &MemoryAddress) -> Result<(), Self::Error>;
 
     /// Map a memory region to an address
-    fn map_region(&mut self, region_id: Self::RegionId, address: MemoryAddress) -> Result<(), Self::Error>;
+    fn map_region(
+        &mut self,
+        region_id: Self::RegionId,
+        address: MemoryAddress,
+    ) -> Result<(), Self::Error>;
 
     /// Unmap a memory region from an address
     fn unmap_region(&mut self, address: &MemoryAddress) -> Result<Self::RegionId, Self::Error>;
@@ -273,7 +313,7 @@ pub trait AddressSpace: Send + Sync {
 }
 
 /// Trait for a file system based on content-addressed blocks
-/// 
+///
 /// Provides a file system interface where files are stored as blocks
 /// addressed by their content hash.
 pub trait ContentAddressedFileSystem: Send + Sync {
@@ -354,7 +394,7 @@ pub struct FilePermissions {
 }
 
 /// Trait for a file handle
-/// 
+///
 /// Represents an open file in the content-addressed file system.
 pub trait FileHandle: Send + Sync {
     /// Error type
@@ -383,7 +423,7 @@ pub trait FileHandle: Send + Sync {
 }
 
 /// Trait for a block cache
-/// 
+///
 /// Caches frequently accessed blocks in memory for performance.
 pub trait BlockCache: Send + Sync {
     /// The type of block to cache
@@ -427,7 +467,7 @@ pub struct CacheStats {
 }
 
 /// Trait for a memory allocator
-/// 
+///
 /// Handles allocation and deallocation of memory blocks.
 pub trait MemoryAllocator: Send + Sync {
     /// Error type
@@ -463,14 +503,19 @@ pub struct AllocationStats {
 }
 
 /// Trait for a memory mapper
-/// 
+///
 /// Maps between virtual addresses and physical/storage addresses.
 pub trait MemoryMapper: Send + Sync {
     /// Error type
     type Error: std::error::Error + Send + Sync;
 
     /// Map a virtual address to a physical address
-    fn map(&mut self, virtual_addr: MemoryAddress, physical_addr: MemoryAddress, size: usize) -> Result<(), Self::Error>;
+    fn map(
+        &mut self,
+        virtual_addr: MemoryAddress,
+        physical_addr: MemoryAddress,
+        size: usize,
+    ) -> Result<(), Self::Error>;
 
     /// Unmap a virtual address
     fn unmap(&mut self, virtual_addr: &MemoryAddress) -> Result<MemoryAddress, Self::Error>;
@@ -479,14 +524,16 @@ pub trait MemoryMapper: Send + Sync {
     fn resolve(&self, virtual_addr: &MemoryAddress) -> Result<MemoryAddress, Self::Error>;
 
     /// Get all mappings
-    fn mappings(&self) -> Result<std::collections::HashMap<MemoryAddress, MemoryAddress>, Self::Error>;
+    fn mappings(
+        &self,
+    ) -> Result<std::collections::HashMap<MemoryAddress, MemoryAddress>, Self::Error>;
 
     /// Clear all mappings
     fn clear(&mut self) -> Result<(), Self::Error>;
 }
 
 /// Trait for a unified storage interface
-/// 
+///
 /// Provides a single interface for all types of storage (RAM, file, network).
 pub trait UnifiedStorage: Send + Sync {
     /// Error type
@@ -499,7 +546,11 @@ pub trait UnifiedStorage: Send + Sync {
     fn retrieve(&self, address: &MemoryAddress) -> Result<Vec<u8>, Self::Error>;
 
     /// Update existing data (creates a new version)
-    fn update(&mut self, old_address: &MemoryAddress, new_data: Vec<u8>) -> Result<MemoryAddress, Self::Error>;
+    fn update(
+        &mut self,
+        old_address: &MemoryAddress,
+        new_data: Vec<u8>,
+    ) -> Result<MemoryAddress, Self::Error>;
 
     /// Delete data by its content address
     fn delete(&mut self, address: &MemoryAddress) -> Result<(), Self::Error>;
@@ -511,7 +562,10 @@ pub trait UnifiedStorage: Send + Sync {
     fn size(&self, address: &MemoryAddress) -> Result<usize, Self::Error>;
 
     /// Get metadata for stored data
-    fn metadata(&self, address: &MemoryAddress) -> Result<std::collections::HashMap<String, String>, Self::Error>;
+    fn metadata(
+        &self,
+        address: &MemoryAddress,
+    ) -> Result<std::collections::HashMap<String, String>, Self::Error>;
 
     /// List all stored content addresses
     fn list(&self) -> Result<Vec<MemoryAddress>, Self::Error>;
@@ -521,24 +575,34 @@ pub trait UnifiedStorage: Send + Sync {
 }
 
 /// Trait for a versioned storage
-/// 
+///
 /// Tracks multiple versions of data with content addressing.
 pub trait VersionedStorage: UnifiedStorage {
     /// Get all versions of data with the same initial content address
-    fn get_versions(&self, initial_address: &MemoryAddress) -> Result<Vec<MemoryAddress>, Self::Error>;
+    fn get_versions(
+        &self,
+        initial_address: &MemoryAddress,
+    ) -> Result<Vec<MemoryAddress>, Self::Error>;
 
     /// Get the current version of data
     fn get_current(&self, initial_address: &MemoryAddress) -> Result<MemoryAddress, Self::Error>;
 
     /// Get a specific version by index
-    fn get_version(&self, initial_address: &MemoryAddress, version: u64) -> Result<MemoryAddress, Self::Error>;
+    fn get_version(
+        &self,
+        initial_address: &MemoryAddress,
+        version: u64,
+    ) -> Result<MemoryAddress, Self::Error>;
 
     /// Get the version history (chain of addresses)
-    fn version_history(&self, current_address: &MemoryAddress) -> Result<Vec<MemoryAddress>, Self::Error>;
+    fn version_history(
+        &self,
+        current_address: &MemoryAddress,
+    ) -> Result<Vec<MemoryAddress>, Self::Error>;
 }
 
 /// Trait for a memory factory
-/// 
+///
 /// Creates memory manager instances with specific configurations.
 pub trait MemoryFactory: Send + Sync {
     /// The type of memory manager to create

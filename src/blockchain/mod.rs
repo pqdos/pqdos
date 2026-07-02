@@ -8,6 +8,7 @@ pub mod traits;
 pub use traits::{
     Blockchain,
     BlockchainConfig,
+    BlockchainEvents,
     BlockchainFactory,
     BlockchainNode,
     BlockchainSync,
@@ -25,5 +26,4 @@ pub use traits::{
     TransactionPool,
     TransactionSigner,
     TransactionType,
-    BlockchainEvents,
 };

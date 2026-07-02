@@ -6,16 +6,6 @@
 pub mod traits;
 
 pub use traits::{
-    Block,
-    BlockBuilder,
-    BlockHasher,
-    BlockId,
-    BlockIterator,
-    BlockQuery,
-    BlockStorage,
-    BlockVerifier,
-    ContentAddressedStorage,
-    EncryptedBlock,
-    EncryptedBlockBuilder,
-    StorageStats,
+    Block, BlockBuilder, BlockHasher, BlockId, BlockIterator, BlockQuery, BlockStorage,
+    BlockVerifier, ContentAddressedStorage, EncryptedBlock, EncryptedBlockBuilder, StorageStats,
 };

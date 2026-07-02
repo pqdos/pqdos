@@ -3,34 +3,28 @@
 //! These traits define interfaces for blockchain functionality,
 //! including transactions, consensus algorithms, and distributed ledger management.
 
-use std::sync::Arc;
+use crate::block::traits::{Block, BlockId, BlockStorage};
+use crate::crypto::traits::{HashFunction, SignatureScheme};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::result::Result;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
-use crate::block::traits::{Block, BlockId, BlockStorage};
-use crate::crypto::traits::{SignatureScheme, HashFunction};
+use std::sync::Arc;
 
 /// Trait for a transaction identifier
 pub trait TransactionId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     fn from_bytes(bytes: Vec<u8>) -> Self;
     fn to_bytes(&self) -> Vec<u8>;
 }
 
 /// Trait for a transaction in the blockchain
-/// 
+///
 /// Transactions represent state changes that are recorded in the blockchain.
-pub trait Transaction: Clone + Debug + Serialize + DeserializeOwned + Eq + std::hash::Hash + Send + Sync {
+pub trait Transaction:
+    Clone + Debug + Serialize + DeserializeOwned + Eq + std::hash::Hash + Send + Sync
+{
     /// The type of identifier for this transaction
     type Id: TransactionId;
 
@@ -65,7 +59,9 @@ pub trait Transaction: Clone + Debug + Serialize + DeserializeOwned + Eq + std::
     fn serialize(&self) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Deserialize a transaction from bytes
-    fn deserialize(data: &[u8]) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> where Self: Sized;
+    fn deserialize(data: &[u8]) -> Result<Self, Box<dyn std::error::Error + Send + Sync>>
+    where
+        Self: Sized;
 
     /// Validate the transaction (signature, format, etc.)
     fn validate(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
@@ -138,7 +134,7 @@ pub trait TransactionSigner: Send + Sync {
 }
 
 /// Trait for a transaction pool
-/// 
+///
 /// Manages pending transactions that have not yet been included in a block.
 pub trait TransactionPool: Send + Sync {
     /// The type of transaction stored in the pool
@@ -150,10 +146,16 @@ pub trait TransactionPool: Send + Sync {
     fn add_transaction(&mut self, transaction: Self::Transaction) -> Result<(), Self::Error>;
 
     /// Get a transaction by its identifier
-    fn get_transaction(&self, id: &<Self::Transaction as Transaction>::Id) -> Result<Self::Transaction, Self::Error>;
+    fn get_transaction(
+        &self,
+        id: &<Self::Transaction as Transaction>::Id,
+    ) -> Result<Self::Transaction, Self::Error>;
 
     /// Remove a transaction from the pool
-    fn remove_transaction(&mut self, id: &<Self::Transaction as Transaction>::Id) -> Result<(), Self::Error>;
+    fn remove_transaction(
+        &mut self,
+        id: &<Self::Transaction as Transaction>::Id,
+    ) -> Result<(), Self::Error>;
 
     /// Get all transactions in the pool
     fn get_all(&self) -> Result<Vec<Self::Transaction>, Self::Error>;
@@ -211,7 +213,7 @@ pub enum ConsensusState {
 }
 
 /// Trait for a consensus algorithm
-/// 
+///
 /// Defines the interface for distributed consensus protocols
 /// (Raft, BFT, Paxos, etc.)
 pub trait ConsensusAlgorithm: Send + Sync {
@@ -228,7 +230,12 @@ pub trait ConsensusAlgorithm: Send + Sync {
     fn propose_transaction(&mut self, transaction: Self::Transaction) -> Result<(), Self::Error>;
 
     /// Vote on a proposed block
-    fn vote(&mut self, peer: Self::PeerId, block_id: &<Self::Block as Block>::Id, approve: bool) -> Result<(), Self::Error>;
+    fn vote(
+        &mut self,
+        peer: Self::PeerId,
+        block_id: &<Self::Block as Block>::Id,
+        approve: bool,
+    ) -> Result<(), Self::Error>;
 
     /// Finalize consensus and produce a new block
     fn finalize(&mut self) -> Result<Self::Block, Self::Error>;
@@ -253,7 +260,7 @@ pub trait ConsensusAlgorithm: Send + Sync {
 }
 
 /// Trait for a blockchain
-/// 
+///
 /// The main interface for the distributed ledger.
 pub trait Blockchain: Send + Sync {
     /// The type of block used in this blockchain
@@ -261,17 +268,17 @@ pub trait Blockchain: Send + Sync {
     /// The type of transaction used in this blockchain
     type Transaction: Transaction;
     /// The consensus algorithm type
-    type Consensus: ConsensusAlgorithm<
-        Block = Self::Block,
-        Transaction = Self::Transaction,
-    >;
+    type Consensus: ConsensusAlgorithm<Block = Self::Block, Transaction = Self::Transaction>;
     /// The block storage backend type
     type Storage: BlockStorage<Block = Self::Block>;
     /// Error type
     type Error: std::error::Error + Send + Sync;
 
     /// Add a transaction to the transaction pool
-    fn add_transaction(&mut self, transaction: Self::Transaction) -> Result<<Self::Transaction as Transaction>::Id, Self::Error>;
+    fn add_transaction(
+        &mut self,
+        transaction: Self::Transaction,
+    ) -> Result<<Self::Transaction as Transaction>::Id, Self::Error>;
 
     /// Create a new block with pending transactions
     fn create_block(&mut self) -> Result<<Self::Block as Block>::Id, Self::Error>;
@@ -292,7 +299,10 @@ pub trait Blockchain: Send + Sync {
     fn get_block_at_height(&self, height: u64) -> Result<Self::Block, Self::Error>;
 
     /// Get all blocks in the chain from a given block
-    fn get_chain_from(&self, from: &<Self::Block as Block>::Id) -> Result<Vec<Self::Block>, Self::Error>;
+    fn get_chain_from(
+        &self,
+        from: &<Self::Block as Block>::Id,
+    ) -> Result<Vec<Self::Block>, Self::Error>;
 
     /// Verify the integrity of the entire blockchain
     fn verify_chain(&self) -> Result<bool, Self::Error>;
@@ -301,10 +311,16 @@ pub trait Blockchain: Send + Sync {
     fn height(&self) -> Result<u64, Self::Error>;
 
     /// Get a transaction by its identifier
-    fn get_transaction(&self, id: &<Self::Transaction as Transaction>::Id) -> Result<Self::Transaction, Self::Error>;
+    fn get_transaction(
+        &self,
+        id: &<Self::Transaction as Transaction>::Id,
+    ) -> Result<Self::Transaction, Self::Error>;
 
     /// Get all transactions in a block
-    fn get_transactions_in_block(&self, block_id: &<Self::Block as Block>::Id) -> Result<Vec<Self::Transaction>, Self::Error>;
+    fn get_transactions_in_block(
+        &self,
+        block_id: &<Self::Block as Block>::Id,
+    ) -> Result<Vec<Self::Transaction>, Self::Error>;
 
     /// Synchronize with a peer
     fn sync_with_peer(&mut self, peer_id: &[u8]) -> Result<(), Self::Error>;
@@ -323,7 +339,7 @@ pub trait Blockchain: Send + Sync {
 }
 
 /// Trait for a blockchain node
-/// 
+///
 /// Represents a participant in the distributed blockchain network.
 pub trait BlockchainNode: Send + Sync {
     /// The type of blockchain this node participates in
@@ -365,10 +381,16 @@ pub trait BlockchainNode: Send + Sync {
     fn peers(&self) -> Vec<PeerId>;
 
     /// Broadcast a transaction to the network
-    fn broadcast_transaction(&self, transaction: <Self::Blockchain as Blockchain>::Transaction) -> Result<(), Self::Error>;
+    fn broadcast_transaction(
+        &self,
+        transaction: <Self::Blockchain as Blockchain>::Transaction,
+    ) -> Result<(), Self::Error>;
 
     /// Broadcast a block to the network
-    fn broadcast_block(&self, block: <Self::Blockchain as Blockchain>::Block) -> Result<(), Self::Error>;
+    fn broadcast_block(
+        &self,
+        block: <Self::Blockchain as Blockchain>::Block,
+    ) -> Result<(), Self::Error>;
 }
 
 /// Trait for blockchain configuration
@@ -405,17 +427,23 @@ pub trait BlockchainConfig: Clone + Debug + Serialize + DeserializeOwned + Send 
 }
 
 /// Trait for blockchain events
-/// 
+///
 /// Allows subscribing to blockchain events.
 pub trait BlockchainEvents: Send + Sync {
     /// The type of blockchain
     type Blockchain: Blockchain;
 
     /// Subscribe to new block events
-    fn on_new_block(&mut self, callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Block) + Send + Sync>);
+    fn on_new_block(
+        &mut self,
+        callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Block) + Send + Sync>,
+    );
 
     /// Subscribe to new transaction events
-    fn on_new_transaction(&mut self, callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Transaction) + Send + Sync>);
+    fn on_new_transaction(
+        &mut self,
+        callback: Arc<dyn Fn(&<Self::Blockchain as Blockchain>::Transaction) + Send + Sync>,
+    );
 
     /// Subscribe to consensus state change events
     fn on_consensus_state_change(&mut self, callback: Arc<dyn Fn(ConsensusState) + Send + Sync>);
@@ -441,7 +469,9 @@ pub trait BlockchainSync: Send + Sync {
     fn sync_status(&self) -> SyncStatus;
 
     /// Get the list of blocks that need to be synchronized
-    fn pending_blocks(&self) -> Result<Vec<<<Self::Blockchain as Blockchain>::Block as Block>::Id>, Self::Error>;
+    fn pending_blocks(
+        &self,
+    ) -> Result<Vec<<<Self::Blockchain as Blockchain>::Block as Block>::Id>, Self::Error>;
 }
 
 /// Synchronization result
@@ -466,7 +496,7 @@ pub struct SyncStatus {
 }
 
 /// Trait for a blockchain factory
-/// 
+///
 /// Creates blockchain instances with specific configurations.
 pub trait BlockchainFactory: Send + Sync {
     /// The type of blockchain to create
@@ -485,7 +515,11 @@ pub trait BlockchainFactory: Send + Sync {
     fn create_default(&self) -> Result<Self::Blockchain, Self::Error>;
 
     /// Create a blockchain node
-    fn create_node(&self, config: Self::Config, address: SocketAddr) -> Result<Self::Node, Self::Error>;
+    fn create_node(
+        &self,
+        config: Self::Config,
+        address: SocketAddr,
+    ) -> Result<Self::Node, Self::Error>;
 }
 
 /// Trait for blockchain validation
@@ -499,10 +533,17 @@ pub trait BlockchainValidator: Send + Sync {
     fn validate(&self, blockchain: &Self::Blockchain) -> Result<bool, Self::Error>;
 
     /// Validate a specific block
-    fn validate_block(&self, blockchain: &Self::Blockchain, block: &<Self::Blockchain as Blockchain>::Block) -> Result<bool, Self::Error>;
+    fn validate_block(
+        &self,
+        blockchain: &Self::Blockchain,
+        block: &<Self::Blockchain as Blockchain>::Block,
+    ) -> Result<bool, Self::Error>;
 
     /// Validate a transaction
-    fn validate_transaction(&self, transaction: &<Self::Blockchain as Blockchain>::Transaction) -> Result<bool, Self::Error>;
+    fn validate_transaction(
+        &self,
+        transaction: &<Self::Blockchain as Blockchain>::Transaction,
+    ) -> Result<bool, Self::Error>;
 
     /// Check if the blockchain is in a valid state
     fn is_valid(&self, blockchain: &Self::Blockchain) -> Result<bool, Self::Error>;

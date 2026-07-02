@@ -1,4 +1,3 @@
-
 //! Error types for the PQC Distributed OS
 
 use thiserror::Error;

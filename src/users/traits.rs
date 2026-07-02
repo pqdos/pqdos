@@ -7,9 +7,9 @@
 //! The key design principle: The genesis user "futuros" owns all system executable blocks,
 //! and its private key is NEVER stored or accessible through the system.
 
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::result::Result;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 /// Name of the genesis user - owner of all system executable blocks
 pub const GENESIS_USER_NAME: &str = "futuros";
@@ -23,15 +23,7 @@ pub const GENESIS_USER_NAME: &str = "futuros";
 /// The identifier is typically derived from the user's public key hash,
 /// making it unique and content-addressable.
 pub trait UserId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     /// Create a new user ID from raw bytes
     fn from_bytes(bytes: Vec<u8>) -> Self;
@@ -52,15 +44,7 @@ pub trait UserId:
 
 /// Trait for user roles in the system
 pub trait UserRole:
-    Clone
-    + Copy
-    + Eq
-    + PartialEq
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Copy + Eq + PartialEq + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     /// Check if this is the genesis role
     fn is_genesis(&self) -> bool;
@@ -77,16 +61,7 @@ pub trait UserRole:
 
 /// Trait for user permissions
 pub trait UserPermissions:
-    Clone
-    + Copy
-    + Eq
-    + PartialEq
-    + Debug
-    + Default
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Copy + Eq + PartialEq + Debug + Default + Serialize + DeserializeOwned + Send + Sync
 {
     /// Check if user can create blocks
     fn can_create_blocks(&self) -> bool;
@@ -183,7 +158,11 @@ pub trait UserBuilder: Send + Sync {
     ///
     /// **Security Note**: This takes ONLY the public key. The private key
     /// MUST be kept externally and is NEVER accessible through this system.
-    fn new_genesis_user(&self, name: String, public_key: Vec<u8>) -> Result<Self::User, Self::Error>;
+    fn new_genesis_user(
+        &self,
+        name: String,
+        public_key: Vec<u8>,
+    ) -> Result<Self::User, Self::Error>;
 }
 
 // ============================================================================
@@ -195,15 +174,7 @@ pub trait UserBuilder: Send + Sync {
 /// The identifier is typically the hash of the block's content,
 /// making it content-addressable like in Git.
 pub trait BlockId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     /// Create a new block ID from raw bytes
     fn from_bytes(bytes: Vec<u8>) -> Self;
@@ -476,7 +447,11 @@ pub trait UserSystemFactory: Send + Sync {
     fn create(&self) -> Self::UserSystem;
 
     /// Create and initialize a new user system with the genesis user
-    fn create_initialized(&self, name: String, public_key: Vec<u8>) -> Result<Self::UserSystem, Self::Error>;
+    fn create_initialized(
+        &self,
+        name: String,
+        public_key: Vec<u8>,
+    ) -> Result<Self::UserSystem, Self::Error>;
 
     /// Create a user system with the default genesis user "futuros"
     fn create_with_futuros(&self, public_key: Vec<u8>) -> Result<Self::UserSystem, Self::Error>;

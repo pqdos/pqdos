@@ -3,24 +3,16 @@
 //! These traits define interfaces for P2P network communication,
 //! allowing for pluggable network implementations (Tokio, async-std, etc.).
 
-use std::sync::Arc;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
-use std::net::{SocketAddr, IpAddr};
-use std::time::SystemTime;
+use std::net::{IpAddr, SocketAddr};
 use std::result::Result;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
+use std::sync::Arc;
+use std::time::SystemTime;
 
 /// Trait for a peer identifier
 pub trait PeerId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     /// Create a new peer ID from raw bytes
     fn from_bytes(bytes: Vec<u8>) -> Self;
@@ -33,7 +25,7 @@ pub trait PeerId:
 }
 
 /// Trait for peer information
-/// 
+///
 /// Represents a node in the P2P network.
 pub trait Peer: Clone + Debug + Serialize + DeserializeOwned + Send + Sync {
     /// The type of peer identifier
@@ -94,7 +86,7 @@ pub enum MessageType {
 }
 
 /// Trait for a network message
-/// 
+///
 /// Represents a message that can be sent over the network.
 pub trait NetworkMessage: Clone + Debug + Serialize + DeserializeOwned + Send + Sync {
     /// The type of message payload
@@ -126,7 +118,7 @@ pub trait NetworkMessage: Clone + Debug + Serialize + DeserializeOwned + Send + 
 }
 
 /// Trait for a message serializer
-/// 
+///
 /// Handles serialization and deserialization of network messages.
 pub trait MessageSerializer: Send + Sync {
     /// The type of message to serialize
@@ -148,7 +140,7 @@ pub trait MessageSerializer: Send + Sync {
 }
 
 /// Trait for a network protocol
-/// 
+///
 /// Defines the low-level protocol for network communication.
 pub trait NetworkProtocol: Send + Sync {
     /// The type of peer
@@ -159,19 +151,34 @@ pub trait NetworkProtocol: Send + Sync {
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Connect to a peer at the given address
-    fn connect(&self, address: SocketAddr) -> impl std::future::Future<Output = Result<Self::Peer, Self::Error>> + Send;
+    fn connect(
+        &self,
+        address: SocketAddr,
+    ) -> impl std::future::Future<Output = Result<Self::Peer, Self::Error>> + Send;
 
     /// Disconnect from a peer
-    fn disconnect(&self, peer_id: &<Self::Peer as Peer>::Id) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn disconnect(
+        &self,
+        peer_id: &<Self::Peer as Peer>::Id,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Send a message to a specific peer
-    fn send(&self, peer_id: &<Self::Peer as Peer>::Id, message: Self::Message) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn send(
+        &self,
+        peer_id: &<Self::Peer as Peer>::Id,
+        message: Self::Message,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Broadcast a message to all connected peers
-    fn broadcast(&self, message: Self::Message) -> impl std::future::Future<Output = Result<Vec<<Self::Peer as Peer>::Id>, Self::Error>> + Send;
+    fn broadcast(
+        &self,
+        message: Self::Message,
+    ) -> impl std::future::Future<Output = Result<Vec<<Self::Peer as Peer>::Id>, Self::Error>> + Send;
 
     /// Receive a message (non-blocking)
-    fn receive(&self) -> impl std::future::Future<Output = Option<(Self::Peer, Self::Message)>> + Send;
+    fn receive(
+        &self,
+    ) -> impl std::future::Future<Output = Option<(Self::Peer, Self::Message)>> + Send;
 
     /// Get all connected peers
     fn connected_peers(&self) -> Vec<Self::Peer>;
@@ -180,20 +187,31 @@ pub trait NetworkProtocol: Send + Sync {
     fn local_peer(&self) -> &Self::Peer;
 
     /// Get the message serializer
-    fn serializer(&self) -> &dyn MessageSerializer<Message = Self::Message, Error = Box<dyn std::error::Error + Send + Sync + 'static>>;
+    fn serializer(
+        &self,
+    ) -> &dyn MessageSerializer<
+        Message = Self::Message,
+        Error = Box<dyn std::error::Error + Send + Sync + 'static>,
+    >;
 
     /// Set a message handler for incoming messages
-    fn set_message_handler(&mut self, handler: Arc<dyn Fn(Self::Peer, Self::Message) + Send + Sync>);
+    fn set_message_handler(
+        &mut self,
+        handler: Arc<dyn Fn(Self::Peer, Self::Message) + Send + Sync>,
+    );
 
     /// Set a connection handler for new connections
     fn set_connection_handler(&mut self, handler: Arc<dyn Fn(Self::Peer) + Send + Sync>);
 
     /// Set a disconnection handler
-    fn set_disconnection_handler(&mut self, handler: Arc<dyn Fn(&<Self::Peer as Peer>::Id) + Send + Sync>);
+    fn set_disconnection_handler(
+        &mut self,
+        handler: Arc<dyn Fn(&<Self::Peer as Peer>::Id) + Send + Sync>,
+    );
 }
 
 /// Trait for a P2P network
-/// 
+///
 /// High-level interface for peer-to-peer network communication.
 pub trait P2PNetwork: Send + Sync {
     /// The type of protocol used
@@ -205,7 +223,10 @@ pub trait P2PNetwork: Send + Sync {
     fn protocol(&self) -> &Self::Protocol;
 
     /// Start the network, listening on the given address
-    fn start(&mut self, listen_addr: SocketAddr) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn start(
+        &mut self,
+        listen_addr: SocketAddr,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Stop the network
     fn stop(&mut self) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
@@ -214,10 +235,18 @@ pub trait P2PNetwork: Send + Sync {
     fn is_running(&self) -> bool;
 
     /// Connect to a specific peer
-    fn connect(&mut self, address: SocketAddr) -> impl std::future::Future<Output = Result<<Self::Protocol as NetworkProtocol>::Peer, Self::Error>> + Send;
+    fn connect(
+        &mut self,
+        address: SocketAddr,
+    ) -> impl std::future::Future<
+        Output = Result<<Self::Protocol as NetworkProtocol>::Peer, Self::Error>,
+    > + Send;
 
     /// Disconnect from a specific peer
-    fn disconnect(&mut self, peer_id: &[u8]) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn disconnect(
+        &mut self,
+        peer_id: &[u8],
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Get all connected peers
     fn peers(&self) -> Vec<<Self::Protocol as NetworkProtocol>::Peer>;
@@ -226,13 +255,20 @@ pub trait P2PNetwork: Send + Sync {
     fn local_peer_id(&self) -> &[u8];
 
     /// Discover peers on the network
-    fn discover_peers(&self) -> impl std::future::Future<Output = Result<Vec<SocketAddr>, Self::Error>> + Send;
+    fn discover_peers(
+        &self,
+    ) -> impl std::future::Future<Output = Result<Vec<SocketAddr>, Self::Error>> + Send;
 
     /// Join the network using bootstrap nodes
-    fn join_network(&mut self, bootstrap_nodes: Vec<SocketAddr>) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn join_network(
+        &mut self,
+        bootstrap_nodes: Vec<SocketAddr>,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Leave the network
-    fn leave_network(&mut self) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn leave_network(
+        &mut self,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Get network statistics
     fn stats(&self) -> NetworkStats;
@@ -252,14 +288,17 @@ pub struct NetworkStats {
 }
 
 /// Trait for peer discovery
-/// 
+///
 /// Handles discovery of other peers in the network.
 pub trait PeerDiscovery: Send + Sync {
     /// Error type
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Discover peers using a bootstrap node
-    fn discover(&self, bootstrap_addr: SocketAddr) -> impl std::future::Future<Output = Result<Vec<SocketAddr>, Self::Error>> + Send;
+    fn discover(
+        &self,
+        bootstrap_addr: SocketAddr,
+    ) -> impl std::future::Future<Output = Result<Vec<SocketAddr>, Self::Error>> + Send;
 
     /// Get a list of known peers
     fn known_peers(&self) -> Vec<SocketAddr>;
@@ -275,7 +314,7 @@ pub trait PeerDiscovery: Send + Sync {
 }
 
 /// Trait for a network transport
-/// 
+///
 /// Low-level transport layer for network communication.
 pub trait NetworkTransport: Send + Sync {
     /// Error type
@@ -284,30 +323,42 @@ pub trait NetworkTransport: Send + Sync {
     type Connection: Connection;
 
     /// Listen for incoming connections on the given address
-    fn listen(&mut self, addr: SocketAddr) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn listen(
+        &mut self,
+        addr: SocketAddr,
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Connect to a remote address
-    fn connect(&mut self, addr: SocketAddr) -> impl std::future::Future<Output = Result<Self::Connection, Self::Error>> + Send;
+    fn connect(
+        &mut self,
+        addr: SocketAddr,
+    ) -> impl std::future::Future<Output = Result<Self::Connection, Self::Error>> + Send;
 
     /// Stop listening
     fn stop(&mut self) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Get the next incoming connection
-    fn accept(&mut self) -> impl std::future::Future<Output = Option<Result<Self::Connection, Self::Error>>> + Send;
+    fn accept(
+        &mut self,
+    ) -> impl std::future::Future<Output = Option<Result<Self::Connection, Self::Error>>> + Send;
 }
 
 /// Trait for a network connection
-/// 
+///
 /// Represents an active connection to a peer.
 pub trait Connection: Send + Sync {
     /// Error type for connection operations
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Send data over the connection
-    fn send(&mut self, data: &[u8]) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
+    fn send(
+        &mut self,
+        data: &[u8],
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 
     /// Receive data from the connection
-    fn receive(&mut self) -> impl std::future::Future<Output = Result<Vec<u8>, Self::Error>> + Send;
+    fn receive(&mut self)
+        -> impl std::future::Future<Output = Result<Vec<u8>, Self::Error>> + Send;
 
     /// Close the connection
     fn close(&mut self) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
@@ -329,7 +380,7 @@ pub trait Connection: Send + Sync {
 }
 
 /// Trait for a network address book
-/// 
+///
 /// Manages known peers and their information.
 pub trait AddressBook: Send + Sync {
     /// Error type
@@ -372,7 +423,7 @@ pub trait AddressBook: Send + Sync {
 }
 
 /// Trait for a network factory
-/// 
+///
 /// Creates network instances with specific configurations.
 pub trait NetworkFactory: Send + Sync {
     /// The type of P2P network to create
@@ -383,10 +434,15 @@ pub trait NetworkFactory: Send + Sync {
     type Config: NetworkConfig;
 
     /// Create a new P2P network with the given configuration
-    fn create(&self, config: Self::Config) -> impl std::future::Future<Output = Result<Self::Network, Self::Error>> + Send;
+    fn create(
+        &self,
+        config: Self::Config,
+    ) -> impl std::future::Future<Output = Result<Self::Network, Self::Error>> + Send;
 
     /// Create a new P2P network with default configuration
-    fn create_default(&self) -> impl std::future::Future<Output = Result<Self::Network, Self::Error>> + Send;
+    fn create_default(
+        &self,
+    ) -> impl std::future::Future<Output = Result<Self::Network, Self::Error>> + Send;
 }
 
 /// Trait for network configuration
@@ -429,7 +485,7 @@ pub trait NetworkConfig: Clone + Debug + Serialize + DeserializeOwned + Send + S
 }
 
 /// Trait for network encryption
-/// 
+///
 /// Handles encryption and decryption of network traffic.
 pub trait NetworkEncryption: Send + Sync {
     /// Error type
@@ -461,7 +517,7 @@ pub trait NetworkEncryption: Send + Sync {
 }
 
 /// Trait for message authentication
-/// 
+///
 /// Handles authentication of network messages.
 pub trait MessageAuthenticator: Send + Sync {
     /// Error type
@@ -471,7 +527,12 @@ pub trait MessageAuthenticator: Send + Sync {
     fn sign(&self, message: &[u8], private_key: &[u8]) -> Result<Vec<u8>, Self::Error>;
 
     /// Verify a message signature
-    fn verify(&self, message: &[u8], signature: &[u8], public_key: &[u8]) -> Result<bool, Self::Error>;
+    fn verify(
+        &self,
+        message: &[u8],
+        signature: &[u8],
+        public_key: &[u8],
+    ) -> Result<bool, Self::Error>;
 
     /// Generate a message authentication code (MAC)
     fn generate_mac(&self, message: &[u8], key: &[u8]) -> Result<Vec<u8>, Self::Error>;
@@ -481,7 +542,7 @@ pub trait MessageAuthenticator: Send + Sync {
 }
 
 /// Trait for a network middleware
-/// 
+///
 /// Allows for intercepting and processing network messages.
 pub trait NetworkMiddleware: Send + Sync {
     /// The type of message

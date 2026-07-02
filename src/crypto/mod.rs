@@ -6,14 +6,6 @@
 pub mod traits;
 
 pub use traits::{
-    CryptoAlgorithms,
-    CryptoProvider,
-    CryptoResult,
-    HashFunction,
-    Kdf,
-    Kem,
-    KeyManager,
-    SecureRng,
-    SignatureScheme,
-    SymmetricEncryption,
+    CryptoAlgorithms, CryptoProvider, CryptoResult, HashFunction, Kdf, Kem, KeyManager, SecureRng,
+    SignatureScheme, SymmetricEncryption,
 };

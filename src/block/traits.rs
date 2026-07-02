@@ -3,25 +3,17 @@
 //! These traits define interfaces for content-addressed block storage,
 //! enabling Git-like hashing and blockchain-based history tracking.
 
-use std::sync::Arc;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 use std::result::Result;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
+use std::sync::Arc;
 
 /// Trait for a block identifier (content address)
-/// 
+///
 /// The identifier is typically the hash of the block's content,
 /// making it content-addressable like in Git.
 pub trait BlockId:
-    Clone
-    + Eq
-    + std::hash::Hash
-    + AsRef<[u8]>
-    + Debug
-    + Serialize
-    + DeserializeOwned
-    + Send
-    + Sync
+    Clone + Eq + std::hash::Hash + AsRef<[u8]> + Debug + Serialize + DeserializeOwned + Send + Sync
 {
     /// Create a new block ID from raw bytes
     fn from_bytes(bytes: Vec<u8>) -> Self;
@@ -34,7 +26,7 @@ pub trait BlockId:
 }
 
 /// Trait for a block of data in the content-addressed storage
-/// 
+///
 /// Blocks are the fundamental units of storage, identified by their content hash.
 pub trait Block: Clone + Debug + Serialize + DeserializeOwned + Send + Sync {
     /// The type of identifier for this block
@@ -83,7 +75,7 @@ pub trait BlockBuilder: Send + Sync {
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Create a new block with the given data
-    /// 
+    ///
     /// If `previous` is Some, this block will be linked to the previous block.
     /// If `previous` is None, this creates a genesis block.
     fn new_block(
@@ -105,7 +97,7 @@ pub trait BlockBuilder: Send + Sync {
 }
 
 /// Trait for block storage backend
-/// 
+///
 /// Provides persistent storage for blocks, allowing retrieval by content address.
 pub trait BlockStorage: Send + Sync {
     /// The type of block stored
@@ -144,7 +136,7 @@ pub struct StorageStats {
 }
 
 /// Trait for encrypted blocks
-/// 
+///
 /// Blocks that are encrypted at rest using symmetric encryption.
 pub trait EncryptedBlock: Block {
     /// Type for the encrypted data (ciphertext)
@@ -176,7 +168,7 @@ pub trait EncryptedBlockBuilder: BlockBuilder {
 }
 
 /// Trait for block verification
-/// 
+///
 /// Provides methods to verify block integrity, signatures, and chain validity.
 pub trait BlockVerifier: Send + Sync {
     /// The type of block to verify
@@ -191,18 +183,15 @@ pub trait BlockVerifier: Send + Sync {
     fn verify_chain(&self, from: &<Self::Block as Block>::Id) -> Result<bool, Self::Error>;
 
     /// Verify that a block is properly linked to its predecessor
-    fn verify_link(
-        &self,
-        block: &Self::Block,
-        previous: &Self::Block,
-    ) -> Result<bool, Self::Error>;
+    fn verify_link(&self, block: &Self::Block, previous: &Self::Block)
+        -> Result<bool, Self::Error>;
 
     /// Verify the signature on a block
     fn verify_signature(&self, block: &Self::Block) -> Result<bool, Self::Error>;
 }
 
 /// Trait for block hashing
-/// 
+///
 /// Provides content-based addressing for blocks.
 pub trait BlockHasher: Send + Sync {
     /// The type of block to hash
@@ -216,7 +205,7 @@ pub trait BlockHasher: Send + Sync {
 }
 
 /// Trait for block iterator
-/// 
+///
 /// Allows iterating through blocks in the storage.
 pub trait BlockIterator: Send + Sync {
     /// The type of block
@@ -229,7 +218,7 @@ pub trait BlockIterator: Send + Sync {
 }
 
 /// Trait for block query interface
-/// 
+///
 /// Provides query capabilities for block storage.
 pub trait BlockQuery: Send + Sync {
     /// The type of block
@@ -238,7 +227,10 @@ pub trait BlockQuery: Send + Sync {
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Find blocks by data content hash (not block ID)
-    fn find_by_content_hash(&self, hash: &[u8]) -> Result<Vec<<Self::Block as Block>::Id>, Self::Error>;
+    fn find_by_content_hash(
+        &self,
+        hash: &[u8],
+    ) -> Result<Vec<<Self::Block as Block>::Id>, Self::Error>;
 
     /// Find blocks created after a timestamp
     fn find_after(&self, timestamp: i64) -> Result<Vec<<Self::Block as Block>::Id>, Self::Error>;
@@ -261,12 +253,15 @@ pub trait BlockQuery: Send + Sync {
 }
 
 /// Trait for content-addressed storage
-/// 
+///
 /// High-level interface for content-addressed block storage,
 /// combining storage, retrieval, and content-based addressing.
 pub trait ContentAddressedStorage: BlockStorage + BlockQuery + BlockVerifier {
     /// Store data and return its content address
-    fn store_data(&mut self, data: Vec<u8>) -> Result<<<Self as BlockStorage>::Block as Block>::Id, <Self as BlockStorage>::Error>;
+    fn store_data(
+        &mut self,
+        data: Vec<u8>,
+    ) -> Result<<<Self as BlockStorage>::Block as Block>::Id, <Self as BlockStorage>::Error>;
 
     /// Retrieve data by its content address
     fn retrieve_data(&self, address: &[u8]) -> Result<Vec<u8>, <Self as BlockStorage>::Error>;

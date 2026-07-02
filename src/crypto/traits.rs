@@ -77,7 +77,7 @@ pub trait SymmetricEncryption: Send + Sync {
 }
 
 /// Trait for Key Encapsulation Mechanisms (KEM) - Post-Quantum key exchange
-/// 
+///
 /// Used for establishing shared secrets (e.g., ML-KEM/Kyber, BIKE, etc.)
 pub trait Kem: Send + Sync {
     /// Public key type
@@ -236,7 +236,7 @@ pub trait KeyManager: Send + Sync {
 }
 
 /// Trait for a cryptographic provider factory
-/// 
+///
 /// Allows creating cryptographic primitives with consistent configuration
 pub trait CryptoProvider: Send + Sync {
     /// Hash function type
