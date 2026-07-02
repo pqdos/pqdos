@@ -129,7 +129,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Android NDK
-        uses: ntt-oss/setup-ndk@v1
+        uses: nttld/setup-ndk@v1
         with:
           ndk-version: r26b
 
