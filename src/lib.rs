@@ -7,11 +7,15 @@ pub mod block;
 pub mod blockchain;
 pub mod crypto;
 pub mod error;
+pub mod integration;
 pub mod memory;
 pub mod network;
+pub mod storage;
 pub mod users;
 
 pub use error::{Error, Result};
+pub use integration::create_system_integration_with_demo_keys;
+pub use storage::local::create_pqdos_system_storage;
 
 /// Library version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

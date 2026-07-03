@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Network error: {0}")]
     NetworkError(String),
 
+    #[error("Storage error: {0}")]
+    StorageError(String),
+
     #[error("Access denied: {0}")]
     AccessDenied(String),
 
@@ -34,6 +37,15 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("HTTP error: {0}")]
+    HttpError(#[from] reqwest::Error),
+
+    #[error("Base64 error: {0}")]
+    Base64Error(#[from] base64::DecodeError),
+
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
 
     #[error("Internal error: {0}")]
     InternalError(String),

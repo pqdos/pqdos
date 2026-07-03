@@ -15,8 +15,6 @@ pub use traits::{
     BlockchainValidator,
     ConsensusAlgorithm,
     ConsensusState,
-    // NetworkMessage, // Not used in blockchain module
-    // PeerId, // Defined in network module
     PeerInfo,
     SyncResult,
     SyncStatus,

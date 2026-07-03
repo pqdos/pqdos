@@ -1,0 +1,115 @@
+name: Build and Sign Executable
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-sign:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+    - name: Build project
+      run: cargo build --release
+
+    - name: Calculate binary hash
+      id: hash
+      run: |
+        BINARY_PATH="./target/release/pqdos"
+        if [ -f "$BINARY_PATH" ]; then
+          HASH=$(sha256sum "$BINARY_PATH" | awk '{print $1}')
+          echo "Binary hash: $HASH"
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          
+          TIMESTAMP=$(date +%s)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          
+          SIZE=$(stat -c%s "$BINARY_PATH")
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+        else
+          echo "Binary not found!"
+          exit 1
+        fi
+
+    - name: Create block JSON
+      id: block
+      run: |
+        BLOCK_ID="${{ steps.hash.outputs.hash }}"
+        echo "block_id=$BLOCK_ID" >> $GITHUB_OUTPUT
+        
+        cat > block.json << EOF
+        {
+          "id": "${BLOCK_ID}",
+          "previous_id": "0000000000000000000000000000000000000000000000000000000000000000",
+          "data": "$(base64 -w0 ./target/release/pqdos)",
+          "owner_id": "pqdos_system",
+          "type": "executable",
+          "timestamp": ${{ steps.hash.outputs.timestamp }},
+          "signature": "",
+          "signer": "pqdos_system",
+          "metadata": {
+            "name": "pqdos",
+            "version": "${{ github.ref_name }}",
+            "commit": "${{ github.sha }}",
+            "workflow": "${{ github.workflow }}",
+            "run_id": "${{ github.run_id }}",
+            "size": "${{ steps.hash.outputs.size }}",
+            "platform": "linux-x86_64"
+          }
+        }
+        EOF
+        
+        echo "Block JSON created"
+
+    - name: Push to blockchain repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Configure git
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+        # Clone the blockchain repo with write access
+        git clone https://x-access-token:$GITHUB_TOKEN@github.com/pqdos/blockchain.git blockchain-repo
+        cd blockchain-repo
+        
+        # Create blocks directory if it doesn't exist
+        mkdir -p blocks chains
+        
+        # Copy the block file
+        cp ../block.json blocks/${{ steps.block.outputs.block_id }}.json
+        
+        # Create/update blockchain file
+        cat > chains/pqdos.json << EOF
+        {
+          "name": "pqdos",
+          "genesis_block": "${{ steps.block.outputs.block_id }}",
+          "head_block": "${{ steps.block.outputs.block_id }}",
+          "blocks": ["${{ steps.block.outputs.block_id }}"],
+          "created_at": ${{ steps.hash.outputs.timestamp }},
+          "updated_at": ${{ steps.hash.outputs.timestamp }},
+          "description": "Main pqdos system blockchain - built from ${{ github.repository }}@${{ github.sha }}"
+        }
+        EOF
+        
+        # Commit and push
+        git add blocks/${{ steps.block.outputs.block_id }}.json chains/pqdos.json
+        git commit -m "Add pqdos executable block from ${{ github.repository }}@${{ github.sha }} [skip ci]"
+        git push origin main
+        
+        echo "✅ Block stored in blockchain repo!"
