@@ -8,7 +8,9 @@ pub mod local;
 pub mod traits;
 
 pub use github::{AsyncStorageBackend, GitHubBlock, GitHubBlockchain, GitHubConfig, GitHubStorage};
-pub use local::{create_pqdos_system_storage, LocalBlock, LocalBlockchain, LocalStorage, LocalStorageFactory};
+pub use local::{
+    create_pqdos_system_storage, LocalBlock, LocalBlockchain, LocalStorage, LocalStorageFactory,
+};
 pub use traits::{
     StorageBackend, StorageBackendFactory, StorageConfig, StorageError, StorageRegistry,
     StorageResult, StoredBlock, StoredBlockchain,

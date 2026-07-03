@@ -181,8 +181,8 @@ pub trait StorageBackend: Send + Sync {
     fn get_genesis_block(&self, chain_name: &str) -> StorageResult<Option<Self::Block>> {
         let chain = self.get_blockchain(chain_name)?;
         match chain {
-            Some(chain) => self.get_block(chain.genesis_block()),
-            None => Ok(None),
+            | Some(chain) => self.get_block(chain.genesis_block()),
+            | None => Ok(None),
         }
     }
 
@@ -190,8 +190,8 @@ pub trait StorageBackend: Send + Sync {
     fn get_head_block(&self, chain_name: &str) -> StorageResult<Option<Self::Block>> {
         let chain = self.get_blockchain(chain_name)?;
         match chain {
-            Some(chain) => self.get_block(chain.head_block()),
-            None => Ok(None),
+            | Some(chain) => self.get_block(chain.head_block()),
+            | None => Ok(None),
         }
     }
 }
@@ -207,7 +207,7 @@ pub trait StorageBackendFactory: Send + Sync {
     fn create(&self, config: &str, owner_id: &str) -> StorageResult<Self::Backend>;
 
     /// Create a storage backend from environment variables
-    fn from_env(&self, owner_id: &str) -> StorageResult<Option<Self::Backend>>;
+    fn create_from_env(&self, owner_id: &str) -> StorageResult<Option<Self::Backend>>;
 }
 
 /// Trait for a storage registry that manages multiple storage backends per user
@@ -253,7 +253,11 @@ pub struct StorageConfig {
 
 impl StorageConfig {
     /// Create a new storage configuration
-    pub fn new(id: impl Into<String>, backend_type: impl Into<String>, owner_id: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        backend_type: impl Into<String>,
+        owner_id: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             backend_type: backend_type.into(),

@@ -9,8 +9,10 @@ use std::sync::Arc;
 
 use crate::storage::github::AsyncStorageBackend;
 use crate::storage::traits::StorageBackend;
-use crate::storage::{create_pqdos_system_storage, GitHubStorage, LocalStorage, StorageError, StorageResult};
-use crate::users::{UserSystem};
+use crate::storage::{
+    create_pqdos_system_storage, GitHubStorage, LocalStorage, StorageError, StorageResult,
+};
+use crate::users::UserSystem;
 
 /// Enum that wraps different storage backend types
 #[derive(Debug, Clone)]
@@ -22,48 +24,46 @@ pub enum StorageBackendEnum {
 impl StorageBackendEnum {
     pub fn id(&self) -> &str {
         match self {
-            StorageBackendEnum::Local(s) => StorageBackend::id(s),
-            StorageBackendEnum::GitHub(s) => AsyncStorageBackend::id(s),
+            | StorageBackendEnum::Local(s) => StorageBackend::id(s),
+            | StorageBackendEnum::GitHub(s) => AsyncStorageBackend::id(s),
         }
     }
 
     pub fn backend_type(&self) -> &str {
         match self {
-            StorageBackendEnum::Local(s) => StorageBackend::backend_type(s),
-            StorageBackendEnum::GitHub(s) => AsyncStorageBackend::backend_type(s),
+            | StorageBackendEnum::Local(s) => StorageBackend::backend_type(s),
+            | StorageBackendEnum::GitHub(s) => AsyncStorageBackend::backend_type(s),
         }
     }
 
     pub fn owner_id(&self) -> &str {
         match self {
-            StorageBackendEnum::Local(s) => StorageBackend::owner_id(s),
-            StorageBackendEnum::GitHub(s) => AsyncStorageBackend::owner_id(s),
+            | StorageBackendEnum::Local(s) => StorageBackend::owner_id(s),
+            | StorageBackendEnum::GitHub(s) => AsyncStorageBackend::owner_id(s),
         }
     }
 
     pub fn has_block(&self, block_id: &str) -> StorageResult<bool> {
         match self {
-            StorageBackendEnum::Local(s) => StorageBackend::has_block(s, block_id),
-            StorageBackendEnum::GitHub(_) => {
+            | StorageBackendEnum::Local(s) => StorageBackend::has_block(s, block_id),
+            | StorageBackendEnum::GitHub(_) => {
                 // GitHubStorage requires async, so for sync operations we return false
                 // In a real implementation, this would be handled differently
                 Ok(false)
-            }
+            },
         }
     }
 
     pub fn get_block_data(&self, block_id: &str) -> StorageResult<Option<Vec<u8>>> {
         match self {
-            StorageBackendEnum::Local(s) => {
-                match StorageBackend::get_block(s, block_id)? {
-                    Some(block) => Ok(Some(block.raw_data()?)),
-                    None => Ok(None),
-                }
-            }
-            StorageBackendEnum::GitHub(_) => {
+            | StorageBackendEnum::Local(s) => match StorageBackend::get_block(s, block_id)? {
+                | Some(block) => Ok(Some(block.raw_data()?)),
+                | None => Ok(None),
+            },
+            | StorageBackendEnum::GitHub(_) => {
                 // GitHubStorage requires async
                 Ok(None)
-            }
+            },
         }
     }
 }
@@ -71,6 +71,7 @@ impl StorageBackendEnum {
 /// User Storage Manager
 #[derive(Debug, Clone)]
 pub struct UserStorageManager {
+    #[allow(dead_code)]
     user_id: String,
     storages: Arc<RwLock<HashMap<String, StorageBackendEnum>>>,
     default_storage_id: Option<String>,
@@ -134,19 +135,19 @@ impl Default for GlobalStorageRegistry {
 
 impl GlobalStorageRegistry {
     pub fn new() -> Self {
-        Self {
-            user_storages: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { user_storages: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     pub fn get_or_create_user_storage(&self, user_id: impl Into<String>) -> UserStorageManager {
         let user_id_str: String = user_id.into();
-        
+
         {
             let mut write_guard = self.user_storages.write();
-            write_guard.entry(user_id_str.clone()).or_insert_with(|| UserStorageManager::new(user_id_str.clone()));
+            write_guard
+                .entry(user_id_str.clone())
+                .or_insert_with(|| UserStorageManager::new(user_id_str.clone()));
         }
-        
+
         self.user_storages.read().get(&user_id_str).unwrap().clone()
     }
 
@@ -172,16 +173,16 @@ impl GlobalStorageRegistry {
 
     pub fn initialize_pqdos_system_storage(&mut self) -> StorageResult<()> {
         let pqdos_system_id = "pqdos_system";
-        
+
         let system_storage = StorageBackendEnum::Local(create_pqdos_system_storage());
         let github_storage = StorageBackendEnum::GitHub(GitHubStorage::new("pqdos", "blockchain"));
-        
+
         self.add_user_storage(pqdos_system_id, "local", system_storage)?;
         self.add_user_storage(pqdos_system_id, "github-blockchain", github_storage)?;
-        
+
         let mut user_storage = self.get_or_create_user_storage(pqdos_system_id);
         user_storage.set_default_storage("local")?;
-        
+
         Ok(())
     }
 }
@@ -195,16 +196,13 @@ pub struct SystemIntegration {
 impl SystemIntegration {
     pub fn new(user_system: UserSystem) -> Self {
         let storage_registry = Arc::new(RwLock::new(GlobalStorageRegistry::new()));
-        
+
         {
             let mut registry_guard = storage_registry.write();
             registry_guard.initialize_pqdos_system_storage().unwrap();
         }
-        
-        Self {
-            user_system: Arc::new(RwLock::new(user_system)),
-            storage_registry,
-        }
+
+        Self { user_system: Arc::new(RwLock::new(user_system)), storage_registry }
     }
 
     pub fn new_with_demo_keys() -> Self {
@@ -217,30 +215,38 @@ impl SystemIntegration {
         use std::fs;
         use std::io::{BufReader, Read};
 
-        let binary_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to get executable path: {}", e))?;
-        
-        let file = fs::File::open(&binary_path)
-            .map_err(|e| format!("Failed to open binary: {}", e))?;
+        let binary_path =
+            std::env::current_exe().map_err(|e| format!("Failed to get executable path: {}", e))?;
+
+        let file =
+            fs::File::open(&binary_path).map_err(|e| format!("Failed to open binary: {}", e))?;
         let mut reader = BufReader::new(file);
         let mut hasher = Sha256::new();
         let mut buffer = [0; 8192];
         loop {
-            let bytes_read = reader.read(&mut buffer)
-                .map_err(|e| format!("Failed to read binary: {}", e))?;
-            if bytes_read == 0 { break; }
+            let bytes_read =
+                reader.read(&mut buffer).map_err(|e| format!("Failed to read binary: {}", e))?;
+            if bytes_read == 0 {
+                break;
+            }
             hasher.update(&buffer[..bytes_read]);
         }
         let binary_hash = format!("{:x}", hasher.finalize());
 
         // Check if binary exists as a block in pqdos_system storage
-        if self.get_default_user_storage_has_block("pqdos_system", &binary_hash).is_ok_and(|exists| exists) {
+        if self
+            .get_default_user_storage_has_block("pqdos_system", &binary_hash)
+            .is_ok_and(|exists| exists)
+        {
             return Ok(true);
         }
 
         // Fallback: check the specific test block provided
         let test_block_id = "f2872c9437ddccb0e9b56569f93d6cf0d7bfb5d45911e137abaf7203283a7655";
-        if self.get_default_user_storage_has_block("pqdos_system", test_block_id).is_ok_and(|exists| exists) {
+        if self
+            .get_default_user_storage_has_block("pqdos_system", test_block_id)
+            .is_ok_and(|exists| exists)
+        {
             return Ok(true);
         }
 
@@ -254,16 +260,25 @@ impl SystemIntegration {
     pub fn get_default_user_storage(&self, user_id: &str) -> Option<StorageBackendEnum> {
         self.storage_registry.read().get_default_user_storage(user_id)
     }
-    
-    pub fn get_user_storage_has_block(&self, user_id: &str, storage_id: &str, block_id: &str) -> StorageResult<bool> {
+
+    pub fn get_user_storage_has_block(
+        &self,
+        user_id: &str,
+        storage_id: &str,
+        block_id: &str,
+    ) -> StorageResult<bool> {
         if let Some(storage) = self.get_user_storage(user_id, storage_id) {
             storage.has_block(block_id)
         } else {
             Ok(false)
         }
     }
-    
-    pub fn get_default_user_storage_has_block(&self, user_id: &str, block_id: &str) -> StorageResult<bool> {
+
+    pub fn get_default_user_storage_has_block(
+        &self,
+        user_id: &str,
+        block_id: &str,
+    ) -> StorageResult<bool> {
         if let Some(storage) = self.get_default_user_storage(user_id) {
             storage.has_block(block_id)
         } else {

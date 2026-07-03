@@ -38,7 +38,7 @@ impl LocalBlock {
     ) -> Self {
         use base64::{engine::general_purpose, Engine as _};
         use chrono;
-        
+
         Self {
             id: id.into(),
             previous_id: None,
@@ -61,7 +61,7 @@ impl LocalBlock {
     ) -> Self {
         use base64::{engine::general_purpose, Engine as _};
         use chrono;
-        
+
         Self {
             id: id.into(),
             previous_id: Some(previous_id.into()),
@@ -88,14 +88,30 @@ impl LocalBlock {
 }
 
 impl StoredBlock for LocalBlock {
-    fn id(&self) -> &str { &self.id }
-    fn previous_id(&self) -> Option<&str> { self.previous_id.as_deref() }
-    fn data(&self) -> &str { &self.data }
-    fn owner_id(&self) -> &str { &self.owner_id }
-    fn block_type(&self) -> &str { &self.block_type }
-    fn timestamp(&self) -> i64 { self.timestamp }
-    fn signature(&self) -> Option<&str> { self.signature.as_deref() }
-    fn metadata(&self) -> &HashMap<String, String> { &self.metadata }
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn previous_id(&self) -> Option<&str> {
+        self.previous_id.as_deref()
+    }
+    fn data(&self) -> &str {
+        &self.data
+    }
+    fn owner_id(&self) -> &str {
+        &self.owner_id
+    }
+    fn block_type(&self) -> &str {
+        &self.block_type
+    }
+    fn timestamp(&self) -> i64 {
+        self.timestamp
+    }
+    fn signature(&self) -> Option<&str> {
+        self.signature.as_deref()
+    }
+    fn metadata(&self) -> &HashMap<String, String> {
+        &self.metadata
+    }
 }
 
 /// Local Storage Blockchain
@@ -141,13 +157,27 @@ impl LocalBlockchain {
 }
 
 impl StoredBlockchain for LocalBlockchain {
-    fn name(&self) -> &str { &self.name }
-    fn genesis_block(&self) -> &str { &self.genesis_block }
-    fn head_block(&self) -> &str { &self.head_block }
-    fn blocks(&self) -> &[String] { &self.blocks }
-    fn created_at(&self) -> i64 { self.created_at }
-    fn updated_at(&self) -> i64 { self.updated_at }
-    fn description(&self) -> Option<&str> { self.description.as_deref() }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn genesis_block(&self) -> &str {
+        &self.genesis_block
+    }
+    fn head_block(&self) -> &str {
+        &self.head_block
+    }
+    fn blocks(&self) -> &[String] {
+        &self.blocks
+    }
+    fn created_at(&self) -> i64 {
+        self.created_at
+    }
+    fn updated_at(&self) -> i64 {
+        self.updated_at
+    }
+    fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
 }
 
 /// Local Storage Backend
@@ -195,10 +225,9 @@ impl LocalStorage {
     pub fn from_config(config: &StorageConfig) -> Self {
         let owner_id = config.owner_id.clone();
         let storage_id = config.id.clone();
-        
-        let base_path = config.parameters.get("path")
-            .map(|p| PathBuf::from(p.as_str()));
-        
+
+        let base_path = config.parameters.get("path").map(|p| PathBuf::from(p.as_str()));
+
         Self {
             storage_id,
             owner_id,
@@ -215,13 +244,11 @@ impl LocalStorage {
             let blocks_dir = base_path.join("blocks");
             if blocks_dir.exists() && blocks_dir.is_dir() {
                 if let Ok(entries) = std::fs::read_dir(&blocks_dir) {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            if entry.path().extension().map_or(false, |ext| ext == "json") {
-                                if let Ok(content) = std::fs::read_to_string(entry.path()) {
-                                    if let Ok(block) = serde_json::from_str::<LocalBlock>(&content) {
-                                        self.blocks.write().insert(block.id.clone(), block);
-                                    }
+                    for entry in entries.flatten() {
+                        if entry.path().extension().is_some_and(|ext| ext == "json") {
+                            if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                                if let Ok(block) = serde_json::from_str::<LocalBlock>(&content) {
+                                    self.blocks.write().insert(block.id.clone(), block);
                                 }
                             }
                         }
@@ -233,13 +260,12 @@ impl LocalStorage {
             let chains_dir = base_path.join("chains");
             if chains_dir.exists() && chains_dir.is_dir() {
                 if let Ok(entries) = std::fs::read_dir(&chains_dir) {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            if entry.path().extension().map_or(false, |ext| ext == "json") {
-                                if let Ok(content) = std::fs::read_to_string(entry.path()) {
-                                    if let Ok(chain) = serde_json::from_str::<LocalBlockchain>(&content) {
-                                        self.blockchains.write().insert(chain.name.clone(), chain);
-                                    }
+                    for entry in entries.flatten() {
+                        if entry.path().extension().is_some_and(|ext| ext == "json") {
+                            if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                                if let Ok(chain) = serde_json::from_str::<LocalBlockchain>(&content)
+                                {
+                                    self.blockchains.write().insert(chain.name.clone(), chain);
                                 }
                             }
                         }
@@ -280,13 +306,19 @@ impl StorageBackend for LocalStorage {
     type Blockchain = LocalBlockchain;
     type Error = StorageError;
 
-    fn id(&self) -> &str { &self.storage_id }
-    fn backend_type(&self) -> &str { "local" }
-    fn owner_id(&self) -> &str { &self.owner_id }
+    fn id(&self) -> &str {
+        &self.storage_id
+    }
+    fn backend_type(&self) -> &str {
+        "local"
+    }
+    fn owner_id(&self) -> &str {
+        &self.owner_id
+    }
     fn config(&self) -> String {
         match &self.base_path {
-            Some(path) => format!("local:path={}", path.display()),
-            None => "local:in-memory".to_string(),
+            | Some(path) => format!("local:path={}", path.display()),
+            | None => "local:in-memory".to_string(),
         }
     }
 
@@ -321,11 +353,7 @@ impl StorageBackend for LocalStorage {
     }
 
     fn list_blocks_by_owner(&self, owner_id: &str) -> StorageResult<Vec<Self::Block>> {
-        Ok(self.blocks.read()
-            .values()
-            .filter(|b| b.owner_id == owner_id)
-            .cloned()
-            .collect())
+        Ok(self.blocks.read().values().filter(|b| b.owner_id == owner_id).cloned().collect())
     }
 
     fn store_blockchain(&self, chain: &Self::Blockchain) -> StorageResult<()> {
@@ -362,6 +390,12 @@ impl StorageBackend for LocalStorage {
 /// Default LocalStorage factory
 pub struct LocalStorageFactory;
 
+impl Default for LocalStorageFactory {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl LocalStorageFactory {
     pub fn new() -> Self {
         Self
@@ -371,7 +405,11 @@ impl LocalStorageFactory {
         LocalStorage::new(owner_id)
     }
 
-    pub fn create_with_path(&self, owner_id: impl Into<String>, path: impl AsRef<Path>) -> LocalStorage {
+    pub fn create_with_path(
+        &self,
+        owner_id: impl Into<String>,
+        path: impl AsRef<Path>,
+    ) -> LocalStorage {
         LocalStorage::with_path(owner_id, path)
     }
 }
@@ -380,34 +418,37 @@ impl LocalStorageFactory {
 /// This is used for the pqdos_system user to have access to the blockchain repo
 pub fn create_pqdos_system_storage() -> LocalStorage {
     let storage = LocalStorage::new("pqdos_system");
-    
+
     // Add the test block provided by the user
     let mut test_block_metadata = HashMap::new();
     test_block_metadata.insert("name".to_string(), "first_block".to_string());
     test_block_metadata.insert("description".to_string(), "First test block in pqdos".to_string());
     test_block_metadata.insert("mime_type".to_string(), "text/plain".to_string());
-    
-    let _test_data = general_purpose::STANDARD
-        .decode("SGVsbG8sIHBrZG9zIQ==")
-        .unwrap_or_default();
-    
+
+    let _test_data = general_purpose::STANDARD.decode("SGVsbG8sIHBrZG9zIQ==").unwrap_or_default();
+
     // Manually create the block with all fields to match the provided JSON
     let block_with_metadata = LocalBlock {
         id: "f2872c9437ddccb0e9b56569f93d6cf0d7bfb5d45911e137abaf7203283a7655".to_string(),
-        previous_id: Some("0000000000000000000000000000000000000000000000000000000000000000".to_string()),
+        previous_id: Some(
+            "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+        ),
         data: "SGVsbG8sIHBrZG9zIQ==".to_string(),
         owner_id: "pqdos_system".to_string(),
         block_type: "data".to_string(),
         timestamp: 1717000060,
-        signature: Some("304502201a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7".to_string()),
+        signature: Some(
+            "304502201a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7"
+                .to_string(),
+        ),
         signer: None,
         metadata: test_block_metadata,
     };
-    
+
     storage.blocks.write().insert(
         "f2872c9437ddccb0e9b56569f93d6cf0d7bfb5d45911e137abaf7203283a7655".to_string(),
         block_with_metadata,
     );
-    
+
     storage
 }

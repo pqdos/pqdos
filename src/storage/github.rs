@@ -13,9 +13,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use super::traits::{
-    StorageConfig, StorageError, StorageResult, StoredBlock, StoredBlockchain,
-};
+use super::traits::{StorageConfig, StorageError, StorageResult, StoredBlock, StoredBlockchain};
 
 /// Default GitHub API base URL
 const GITHUB_API_URL: &str = "https://api.github.com";
@@ -128,10 +126,7 @@ impl GitHubStorage {
     }
 
     fn api_url(&self, path: &str) -> String {
-        format!(
-            "{}/repos/{}/{}/{}",
-            self.config.api_url, self.config.owner, self.config.repo, path
-        )
+        format!("{}/repos/{}/{}/{}", self.config.api_url, self.config.owner, self.config.repo, path)
     }
 
     fn headers(&self) -> reqwest::header::HeaderMap {
@@ -163,41 +158,34 @@ impl GitHubStorage {
             .await
             .map_err(|e| StorageError::ConnectionError(e.to_string()))?;
         match response.status() {
-            reqwest::StatusCode::OK => {
+            | reqwest::StatusCode::OK => {
                 let json: serde_json::Value = response
                     .json()
                     .await
                     .map_err(|e| StorageError::DeserializationError(e.to_string()))?;
-                let content = json["content"]
-                    .as_str()
-                    .ok_or_else(|| {
-                        StorageError::InternalError("Invalid response format".to_string())
-                    })?;
+                let content = json["content"].as_str().ok_or_else(|| {
+                    StorageError::InternalError("Invalid response format".to_string())
+                })?;
                 Ok(Some(
                     general_purpose::STANDARD
                         .decode(content)
                         .map_err(|e| StorageError::DeserializationError(e.to_string()))?,
                 ))
-            }
-            reqwest::StatusCode::NOT_FOUND => Ok(None),
-            reqwest::StatusCode::UNAUTHORIZED => Err(StorageError::PermissionDenied),
-            _ => Err(StorageError::ConnectionError(format!(
-                "API error: {:?}",
-                response.status()
-            ))),
+            },
+            | reqwest::StatusCode::NOT_FOUND => Ok(None),
+            | reqwest::StatusCode::UNAUTHORIZED => Err(StorageError::PermissionDenied),
+            | _ => {
+                Err(StorageError::ConnectionError(format!("API error: {:?}", response.status())))
+            },
         }
     }
 
     pub async fn store_file(&self, path: &str, content: &[u8]) -> StorageResult<()> {
-        let _ = self
-            .config
-            .token
-            .as_ref()
-            .ok_or_else(|| StorageError::PermissionDenied)?;
+        let _ = self.config.token.as_ref().ok_or(StorageError::PermissionDenied)?;
         let url = self.api_url(path);
         let sha = match self.get_file_sha(path).await {
-            Ok(sha) => Some(sha),
-            Err(_) => None,
+            | Ok(sha) => Some(sha),
+            | Err(_) => None,
         };
         let request_body = serde_json::json!({
             "message": "pqdos store",
@@ -233,17 +221,11 @@ impl GitHubStorage {
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Ok(Vec::new());
         }
-        let json: serde_json::Value = response
-            .json()
-            .await
-            .map_err(|e| StorageError::DeserializationError(e.to_string()))?;
+        let json: serde_json::Value =
+            response.json().await.map_err(|e| StorageError::DeserializationError(e.to_string()))?;
         Ok(json
             .as_array()
-            .map(|a| {
-                a.iter()
-                    .filter_map(|v| v["name"].as_str().map(|s| s.to_string()))
-                    .collect()
-            })
+            .map(|a| a.iter().filter_map(|v| v["name"].as_str().map(|s| s.to_string())).collect())
             .unwrap_or_default())
     }
 
@@ -259,10 +241,8 @@ impl GitHubStorage {
         if response.status() != reqwest::StatusCode::OK {
             return Err(StorageError::NotFound);
         }
-        let json: serde_json::Value = response
-            .json()
-            .await
-            .map_err(|e| StorageError::DeserializationError(e.to_string()))?;
+        let json: serde_json::Value =
+            response.json().await.map_err(|e| StorageError::DeserializationError(e.to_string()))?;
         Ok(json["sha"]
             .as_str()
             .ok_or_else(|| StorageError::InternalError("Missing sha in response".to_string()))?
@@ -270,11 +250,7 @@ impl GitHubStorage {
     }
 
     pub async fn delete_file(&self, path: &str) -> StorageResult<()> {
-        let _ = self
-            .config
-            .token
-            .as_ref()
-            .ok_or_else(|| StorageError::PermissionDenied)?;
+        let _ = self.config.token.as_ref().ok_or(StorageError::PermissionDenied)?;
         let url = self.api_url(path);
         let sha = self.get_file_sha(path).await?;
         let response = self
@@ -368,14 +344,30 @@ impl GitHubBlock {
 }
 
 impl StoredBlock for GitHubBlock {
-    fn id(&self) -> &str { &self.id }
-    fn previous_id(&self) -> Option<&str> { self.previous_id.as_deref() }
-    fn data(&self) -> &str { &self.data }
-    fn owner_id(&self) -> &str { &self.owner_id }
-    fn block_type(&self) -> &str { &self.block_type }
-    fn timestamp(&self) -> i64 { self.timestamp }
-    fn signature(&self) -> Option<&str> { self.signature.as_deref() }
-    fn metadata(&self) -> &HashMap<String, String> { &self.metadata }
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn previous_id(&self) -> Option<&str> {
+        self.previous_id.as_deref()
+    }
+    fn data(&self) -> &str {
+        &self.data
+    }
+    fn owner_id(&self) -> &str {
+        &self.owner_id
+    }
+    fn block_type(&self) -> &str {
+        &self.block_type
+    }
+    fn timestamp(&self) -> i64 {
+        self.timestamp
+    }
+    fn signature(&self) -> Option<&str> {
+        self.signature.as_deref()
+    }
+    fn metadata(&self) -> &HashMap<String, String> {
+        &self.metadata
+    }
 }
 
 // ============================================================================
@@ -423,21 +415,34 @@ impl GitHubBlockchain {
 }
 
 impl StoredBlockchain for GitHubBlockchain {
-    fn name(&self) -> &str { &self.name }
-    fn genesis_block(&self) -> &str { &self.genesis_block }
-    fn head_block(&self) -> &str { &self.head_block }
-    fn blocks(&self) -> &[String] { &self.blocks }
-    fn created_at(&self) -> i64 { self.created_at }
-    fn updated_at(&self) -> i64 { self.updated_at }
-    fn description(&self) -> Option<&str> { self.description.as_deref() }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn genesis_block(&self) -> &str {
+        &self.genesis_block
+    }
+    fn head_block(&self) -> &str {
+        &self.head_block
+    }
+    fn blocks(&self) -> &[String] {
+        &self.blocks
+    }
+    fn created_at(&self) -> i64 {
+        self.created_at
+    }
+    fn updated_at(&self) -> i64 {
+        self.updated_at
+    }
+    fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
 }
-
-
 
 // ============================================================================
 // ASYNC STORAGE BACKEND TRAIT AND IMPLEMENTATION
 // ============================================================================
 
+#[allow(async_fn_in_trait)]
 pub trait AsyncStorageBackend: Clone + Debug + Send + Sync {
     type Block: StoredBlock + Clone + Send + Sync;
     type Blockchain: StoredBlockchain + Clone + Send + Sync;
@@ -470,9 +475,15 @@ impl AsyncStorageBackend for GitHubStorage {
     type Blockchain = GitHubBlockchain;
     type Error = StorageError;
 
-    fn id(&self) -> &str { &self.storage_id }
-    fn backend_type(&self) -> &str { "github" }
-    fn owner_id(&self) -> &str { &self.owner_id }
+    fn id(&self) -> &str {
+        &self.storage_id
+    }
+    fn backend_type(&self) -> &str {
+        "github"
+    }
+    fn owner_id(&self) -> &str {
+        &self.owner_id
+    }
 
     async fn store_block(&self, block: &Self::Block) -> Result<(), Self::Error> {
         let path = format!("blocks/{}.json", block.id);
@@ -485,12 +496,12 @@ impl AsyncStorageBackend for GitHubStorage {
     async fn get_block(&self, block_id: &str) -> Result<Option<Self::Block>, Self::Error> {
         let path = format!("blocks/{}.json", block_id);
         match self.fetch_file(&path).await? {
-            Some(bytes) => {
+            | Some(bytes) => {
                 let block: GitHubBlock = serde_json::from_slice(&bytes)
                     .map_err(|e| StorageError::DeserializationError(e.to_string()))?;
                 Ok(Some(block))
-            }
-            None => Ok(None),
+            },
+            | None => Ok(None),
         }
     }
 
@@ -532,12 +543,12 @@ impl AsyncStorageBackend for GitHubStorage {
     async fn get_blockchain(&self, name: &str) -> Result<Option<Self::Blockchain>, Self::Error> {
         let path = format!("chains/{}.json", name);
         match self.fetch_file(&path).await? {
-            Some(bytes) => {
+            | Some(bytes) => {
                 let chain: GitHubBlockchain = serde_json::from_slice(&bytes)
                     .map_err(|e| StorageError::DeserializationError(e.to_string()))?;
                 Ok(Some(chain))
-            }
-            None => Ok(None),
+            },
+            | None => Ok(None),
         }
     }
 

@@ -163,17 +163,19 @@ impl VirtualFileSystem {
 fn verify_self_integrity(user_system: &UserSystem) -> Result<bool, String> {
     // First, try the local integration-based verification
     let integration = create_system_integration_with_demo_keys();
-    
+
     // Check if pqdos_system has a default storage with the test block
     let test_block_id = "f2872c9437ddccb0e9b56569f93d6cf0d7bfb5d45911e137abaf7203283a7655";
-    if let Ok(true) = integration.get_default_user_storage_has_block(PQDOS_SYSTEM_USER, test_block_id) {
+    if let Ok(true) =
+        integration.get_default_user_storage_has_block(PQDOS_SYSTEM_USER, test_block_id)
+    {
         return Ok(true);
     }
-    
+
     // Try to verify against GitHub blockchain storage asynchronously
     // We'll use tokio runtime for this
     // Note: In a real implementation, we'd want to restructure this to be async
-    
+
     // Fallback to the old user system-based verification
     let binary_path =
         env::current_exe().map_err(|e| format!("Failed to get executable path: {}", e))?;
@@ -194,7 +196,7 @@ fn verify_self_integrity(user_system: &UserSystem) -> Result<bool, String> {
             }
         }
     }
-    
+
     Ok(false)
 }
 
@@ -204,37 +206,38 @@ async fn verify_self_integrity_async() -> Result<bool, String> {
     use sha2::{Digest, Sha256};
     use std::fs;
     use std::io::{BufReader, Read};
-    
-    let binary_path = std::env::current_exe()
-        .map_err(|e| format!("Failed to get executable path: {}", e))?;
-    
-    let file = fs::File::open(&binary_path)
-        .map_err(|e| format!("Failed to open binary: {}", e))?;
+
+    let binary_path =
+        std::env::current_exe().map_err(|e| format!("Failed to get executable path: {}", e))?;
+
+    let file = fs::File::open(&binary_path).map_err(|e| format!("Failed to open binary: {}", e))?;
     let mut reader = BufReader::new(file);
     let mut hasher = Sha256::new();
     let mut buffer = [0; 8192];
     loop {
-        let bytes_read = reader.read(&mut buffer)
-            .map_err(|e| format!("Failed to read binary: {}", e))?;
-        if bytes_read == 0 { break; }
+        let bytes_read =
+            reader.read(&mut buffer).map_err(|e| format!("Failed to read binary: {}", e))?;
+        if bytes_read == 0 {
+            break;
+        }
         hasher.update(&buffer[..bytes_read]);
     }
     let binary_hash = format!("{:x}", hasher.finalize());
-    
+
     // Create GitHub storage for pqdos/blockchain
     let github_storage = pqdos::storage::GitHubStorage::new("pqdos", "blockchain");
-    
+
     // Check if the binary hash exists as a block in GitHub
     if github_storage.has_block(&binary_hash).await.is_ok_and(|exists| exists) {
         return Ok(true);
     }
-    
+
     // Also check the test block
     let test_block_id = "f2872c9437ddccb0e9b56569f93d6cf0d7bfb5d45911e137abaf7203283a7655";
     if github_storage.has_block(test_block_id).await.is_ok_and(|exists| exists) {
         return Ok(true);
     }
-    
+
     Ok(false)
 }
 
@@ -771,18 +774,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🔍 Verifying self-integrity...");
 
     let user_system = create_user_system_with_demo_keys();
-    
+
     // Try async verification against GitHub blockchain
     let github_verified = {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(verify_self_integrity_async())
     };
-    
+
     match github_verified {
-        Ok(true) => {
+        | Ok(true) => {
             println!("✅ Self-integrity verified - Binary matches GitHub blockchain");
         },
-        Ok(false) => {
+        | Ok(false) => {
             // Fallback to local verification
             match verify_self_integrity(&user_system) {
                 | Ok(true) => {
@@ -791,14 +794,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 | Ok(false) => {
                     println!("⚠️  Self-integrity: Binary not found in system blocks");
                     println!("   This is expected during development");
-                    println!("   In production, this would prevent execution if verification fails");
+                    println!(
+                        "   In production, this would prevent execution if verification fails"
+                    );
                 },
                 | Err(e) => {
                     println!("❌ Self-integrity error: {}", e);
                 },
             }
         },
-        Err(e) => {
+        | Err(e) => {
             println!("⚠️  GitHub blockchain verification failed: {}", e);
             // Fallback to local verification
             match verify_self_integrity(&user_system) {
@@ -808,7 +813,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 | Ok(false) => {
                     println!("⚠️  Self-integrity: Binary not found in system blocks");
                     println!("   This is expected during development");
-                    println!("   In production, this would prevent execution if verification fails");
+                    println!(
+                        "   In production, this would prevent execution if verification fails"
+                    );
                 },
                 | Err(e) => {
                     println!("❌ Self-integrity error: {}", e);
