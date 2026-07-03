@@ -26,6 +26,12 @@ pub enum Error {
     #[error("Network error: {0}")]
     NetworkError(String),
 
+    #[error("Peer not found: {0}")]
+    PeerNotFound(String),
+
+    #[error("Peer not connected: {0}")]
+    PeerNotConnected(String),
+
     #[error("Access denied: {0}")]
     AccessDenied(String),
 

@@ -4,8 +4,10 @@
 //! content-addressed block storage with Git-like hashing.
 
 pub mod traits;
+pub mod simple;
 
 pub use traits::{
     Block, BlockBuilder, BlockHasher, BlockId, BlockIterator, BlockQuery, BlockStorage,
     BlockVerifier, ContentAddressedStorage, EncryptedBlock, EncryptedBlockBuilder, StorageStats,
 };
+pub use simple::{SimpleBlock, SimpleBlockId, SimpleBlockData};
